@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: kodolam-bot-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false  # set manually on Render dashboard
+
+  - type: worker
+    name: kodolam-price-worker
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash start-worker.sh
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
