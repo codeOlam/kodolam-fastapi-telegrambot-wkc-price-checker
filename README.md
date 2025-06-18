@@ -53,7 +53,7 @@ Create a `.env` file in the root directory:
 
 ```
 TELEGRAM_BOT_TOKEN=your_bot_token
-CHANNEL_ID=-1001234567890
+CHANNEL_ID=-100xxxxxxxxxxxxx
 ```
 
 Install `python-dotenv` and load it in your scripts if needed.
@@ -62,14 +62,14 @@ Install `python-dotenv` and load it in your scripts if needed.
 
 ```fish
 set -x TELEGRAM_BOT_TOKEN your_bot_token
-set -x CHANNEL_ID -1001234567890
+set -x CHANNEL_ID -100xxxxxxxxxxxxx
 ```
 
 Or for Bash/zsh:
 
 ```bash
 export TELEGRAM_BOT_TOKEN=your_bot_token
-export CHANNEL_ID=-1001234567890
+export CHANNEL_ID=-100xxxxxxxxxxxxx
 ```
 
 ---
@@ -163,8 +163,6 @@ Go to **GitHub → Settings → Secrets → Actions**, and add:
 ├── utils.py              # Shared helpers (price fetchers, message formatters)
 ├── render.yaml           # Render.com IaaC config
 ├── requirements.txt      # Python dependencies
-├── .github/workflows/
-│   └── price-checker.yml # GitHub Actions cron job
 ├── ngrok-webhook.sh      # Helper for dev webhook testing
 ├── set-webhook.sh        # Manual webhook setter
 └── README.md             # This doc

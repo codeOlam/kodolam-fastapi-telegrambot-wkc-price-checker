@@ -36,6 +36,7 @@ async def set_webhook():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # print('[lifespan] running now')
+    asyncio.create_task(start_price_checker())
     await set_webhook()
     await set_commands()
     yield
@@ -74,3 +75,10 @@ async def webhook(req: Request):
             resp = f"💹 Dominance:\n\n{await get_dominance()}"
     await send_message(cid, resp)
     return {"ok": True}
+
+
+# this will work with uptimeroobot to kep render.com alive,
+# if you are using free tier else comment out
+@app.get("/ping")
+async def ping():
+    return {"status": "ok"}
