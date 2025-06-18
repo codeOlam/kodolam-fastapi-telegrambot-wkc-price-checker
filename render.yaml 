@@ -7,14 +7,18 @@ services:
     startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
     envVars:
       - key: TELEGRAM_BOT_TOKEN
-        sync: false  # set manually on Render dashboard
+        sync: false #manually set on render dashboard
+      - key: CHANNEL_ID
+        sync: false
 
   - type: worker
     name: kodolam-price-worker
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: bash start-worker.sh
+    startCommand: python worker.py
     envVars:
       - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: CHANNEL_ID
         sync: false

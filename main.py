@@ -5,13 +5,11 @@ import httpx
 import os
 from utils import (
     register_chat_id, TOKENS, get_price_coinlore, get_token_info,
-    get_fear_greed, get_dominance, format_price, send_message
+    get_fear_greed, get_dominance, format_price, send_message, TELEGRAM_API_URL
 )
 from background import start_price_checker, build_message
 
-CHANNEL = "@kodOlamWkcWatcher"
 BOT = os.getenv("TELEGRAM_BOT_TOKEN")
-TELE_URL = f"https://api.telegram.org/bot{BOT}"
 
 
 async def set_commands():
@@ -23,12 +21,21 @@ async def set_commands():
         {"command": "info_dominance", "description": "Market dominance"}
     ]
     async with httpx.AsyncClient() as c:
-        await c.post(f"{TELE_URL}/setMyCommands", json={"commands": cmds})
+        await c.post(f"{TELEGRAM_API_URL}/setMyCommands", json={"commands": cmds})
+
+
+async def set_webhook():
+    webhook_url = f"https://kodolam-fastapi-telegrambot-wkc-price.onrender.com/webhook"
+    async with httpx.AsyncClient() as client:
+        await client.post(
+            f"{TELEGRAM_API_URL}/setWebhook",
+            data={"url": webhook_url}
+        )
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    asyncio.create_task(start_price_checker())
+    await set_webhook()
     await set_commands()
     yield
 
@@ -66,3 +73,7 @@ async def webhook(req: Request):
             resp = f"💹 Dominance:\n{await get_dominance()}"
     await send_message(cid, resp)
     return {"ok": True}
+
+
+if __name__ == "__main__":
+    asyncio.run(start_price_checker())

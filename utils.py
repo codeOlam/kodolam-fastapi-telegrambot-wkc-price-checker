@@ -6,6 +6,7 @@ import traceback
 import httpx
 
 CHAT_IDS_FILE = Path("chat_ids.json")
+CHANNEL_ID = os.getenv('CHANNEL_ID')
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{os.getenv('TELEGRAM_BOT_TOKEN')}"
 
 TOKENS = {

@@ -1,17 +1,23 @@
 import asyncio
-from utils import format_price, price_cache, fetch_all_coinlore_prices, TOKENS
+from utils import TELEGRAM_API_URL, format_price, price_cache, fetch_all_coinlore_prices, TOKENS, CHANNEL_ID
 import httpx
 import os
 
-CHANNEL_ID = "@kodOlamWkcWatcher"
-
 
 async def start_price_checker():
-    while True:
-        await fetch_all_coinlore_prices()
-        prices = {t: price_cache.get(t, {}).get("price", "—") for t in TOKENS}
-        await send_to_channel(build_message(prices))
-        await asyncio.sleep(60)  # every minute
+    try:
+        while True:
+            await fetch_all_coinlore_prices()
+            prices = {t: price_cache.get(t, {}).get(
+                "price", "—") for t in TOKENS}
+            await send_to_channel(build_message(prices))
+            await asyncio.sleep(60)
+    except asyncio.CancelledError:
+        # Price checker task was cancelled. Exiting gracefully
+        raise
+    except Exception as e:
+        # print(f"[Background Error] {type(e).__name__}: {e}")
+        raise  # Let the worker catch and log it too
 
 
 def build_message(prices):
@@ -40,5 +46,7 @@ def build_message(prices):
 
 async def send_to_channel(msg):
     async with httpx.AsyncClient() as c:
-        await c.post(f"https://api.telegram.org/bot{os.getenv('TELEGRAM_BOT_TOKEN')}/sendMessage",
-                     json={"chat_id": CHANNEL_ID, "text": msg, "parse_mode": "Markdown"})
+        await c.post(
+            f"{TELEGRAM_API_URL}/sendMessage",
+            json={"chat_id": CHANNEL_ID, "text": msg, "parse_mode": "Markdown"}
+        )
