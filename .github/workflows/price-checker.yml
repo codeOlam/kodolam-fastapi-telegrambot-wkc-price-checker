@@ -1,9 +1,9 @@
+# .github/workflows/price-checker.yml
+
 name: Price Checker Bot
 
 on:
-  schedule:
-    - cron: "*/1 * * * *" # Every 1 minutes
-  workflow_dispatch: # Allow manual run from GitHub Actions UI
+  workflow_dispatch: # Only allow manual run (no cron)
 
 jobs:
   run-price-checker:
