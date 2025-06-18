@@ -70,8 +70,8 @@ async def webhook(req: Request):
                 f"Contract: `{d['contract']}`"
             ])
         elif cmd == "fear-greed":
-            resp = f"🙀🤑 Fear & Greed: {await get_fear_greed()}"
+            resp = f"🙀🤑 Fear & Greed\n\n: {await get_fear_greed()}"
         elif cmd == "dominance":
-            resp = f"💹 Dominance:\n{await get_dominance()}"
+            resp = f"💹 Dominance:\n\n{await get_dominance()}"
     await send_message(cid, resp)
     return {"ok": True}
