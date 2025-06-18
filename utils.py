@@ -7,6 +7,8 @@ import httpx
 
 CHAT_IDS_FILE = Path("chat_ids.json")
 CHANNEL_ID = os.getenv('CHANNEL_ID')
+# CHANNEL_ID = "-1002703612913"  # This is your @kodOlamWkcWatcher channel ID
+# CHANNEL_ID = "@kodOlamWkcWatcher"  # This is your @kodOlamWkcWatcher channel ID
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{os.getenv('TELEGRAM_BOT_TOKEN')}"
 
 TOKENS = {
