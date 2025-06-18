@@ -1,13 +1,13 @@
+import asyncio
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
-import asyncio
 import httpx
 import os
 from utils import (
     register_chat_id, TOKENS, get_price_coinlore, get_token_info,
     get_fear_greed, get_dominance, format_price, send_message, TELEGRAM_API_URL
 )
-from background import start_price_checker, build_message
+from background import build_message, start_price_checker
 
 BOT = os.getenv("TELEGRAM_BOT_TOKEN")
 
@@ -35,7 +35,9 @@ async def set_webhook():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    print('[lifespan] running now')
     await set_webhook()
+    # asyncio.create_task(start_price_checker())
     await set_commands()
     yield
 
@@ -73,7 +75,3 @@ async def webhook(req: Request):
             resp = f"💹 Dominance:\n{await get_dominance()}"
     await send_message(cid, resp)
     return {"ok": True}
-
-
-if __name__ == "__main__":
-    asyncio.run(start_price_checker())
