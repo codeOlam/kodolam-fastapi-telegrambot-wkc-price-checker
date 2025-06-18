@@ -12,10 +12,10 @@ def shutdown():
 
 async def main():
     try:
-        print("🔁 Worker starting price checker...")
+        # print("🔁 Worker starting price checker...")
         await start_price_checker()
     except Exception as e:
-        print(f"[Worker Error] {type(e).__name__}: {e}")
+        # print(f"[Worker Error] {type(e).__name__}: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

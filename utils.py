@@ -75,7 +75,7 @@ async def fetch_all_coinlore_prices():
                 }
 
     except Exception as e:
-        print(f"[CoinLore Fetch Error] {type(e).__name__}: {e}")
+        # print(f"[CoinLore Fetch Error] {type(e).__name__}: {e}")
         traceback.print_exc()
 
 
