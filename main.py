@@ -25,7 +25,7 @@ async def set_commands():
 
 
 async def set_webhook():
-    webhook_url = f"https://kodolam-fastapi-telegrambot-wkc-price.onrender.com/webhook"
+    webhook_url = f"https://kodolam-bot-api.onrender.com/webhook"
     async with httpx.AsyncClient() as client:
         await client.post(
             f"{TELEGRAM_API_URL}/setWebhook",
