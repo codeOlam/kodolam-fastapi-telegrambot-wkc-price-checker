@@ -11,7 +11,7 @@
 - ✅ Token data includes price, 24h % change, market cap, volume, circulating supply, and contract address.
 - ✅ Sends rich messages with emojis, formatting, token logos, and external links.
 - ✅ Easy deployment via **Render.com** (Infrastructure-as-Code)
-- ✅ Scheduled background task via **GitHub Actions**
+- ✅ UptimeRobot keeps bot alive (Render free plan shuts down on inactivity)
 
 ---
 
@@ -20,7 +20,7 @@
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/kodolam-fastapi-telegrambot-wkc-price-checker.git
+git clone git@github.com:codeOlam/kodolam-fastapi-telegrambot-wkc-price-checker.git
 cd kodolam-fastapi-telegrambot-wkc-price-checker
 ```
 
@@ -128,29 +128,33 @@ Choose **"New Blueprint"**, connect your repo, and deploy.
 
 ---
 
-## ⚙️ GitHub Actions: Background Worker (Price Updates)
+## 🔁 Keeping the Bot Alive with UptimeRobot
 
-This project includes a GitHub Actions workflow that runs every 5 minutes and posts price updates.
+Since the price-checker task must run continuously, GitHub Actions is not suitable. Instead, use [UptimeRobot](https://uptimerobot.com) to ping your service and keep it awake on Render’s free plan.
 
-### Location:
+### ✅ How it works:
 
-```
-.github/workflows/price-checker.yml
-```
+Your FastAPI server runs the start_price_checker() task on startup via lifespan events.
 
-### Run it manually:
-
-1. Go to your repo on GitHub
-2. Click on **Actions**
+1. Go to [UptimeRobot](https://uptimerobot.com)
+2. Click on **Add New Monitor**
 3. Select **“Price Checker Bot”**
-4. Click **Run Workflow**
+4. Click
 
-### Secrets needed:
+- **Monitor Type:** HTTP(s)
+- **Friendly Name:** KodOlam Bot Ping
+- **URL:** `https://xxx-xxx-xxx.onrender.com/ping`
+- **Monitoring Interval:** Every 5 or 10 minutes
 
-Go to **GitHub → Settings → Secrets → Actions**, and add:
+5. Save
 
-- `TELEGRAM_BOT_TOKEN`
-- `CHANNEL_ID`
+### ✅ Add a health check endpoint in `main.py`:
+
+```python
+@app.get("/ping")
+async def ping():
+    return {"status": "ok"}
+```
 
 ---
 
@@ -183,10 +187,3 @@ Go to **GitHub → Settings → Secrets → Actions**, and add:
 - [ ] Display token logos using Telegram inline images
 - [ ] Add a database to track token history
 - [ ] Improve error reporting/logging to a channel
-
----
-
-## 📫 Contact
-
-Built by [@codeOlam](https://x.com/codeOlam) for [@WikiCatCoin](https://x.com/WikiCatCoin).  
-Join the updates: [@kodOlamWkcWatcher](https://t.me/kodOlamWkcWatcher)
