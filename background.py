@@ -5,7 +5,7 @@ import os
 
 
 async def start_price_checker():
-    print('[start_price_checker] is being called!')
+    # print('[start_price_checker] is being called!')
     try:
         while True:
             await fetch_all_coinlore_prices()
@@ -17,7 +17,7 @@ async def start_price_checker():
         # Price checker task was cancelled. Exiting gracefully
         raise
     except Exception as e:
-        print(f"[Background Error] {type(e).__name__}: {e}")
+        # print(f"[Background Error] {type(e).__name__}: {e}")
         raise  # Let the worker catch and log it too
 
 
@@ -46,7 +46,7 @@ def build_message(prices):
 
 
 async def send_to_channel(msg):
-    print('[send_to_channel] here now')
+    # print('[send_to_channel] here now')
     async with httpx.AsyncClient() as c:
         await c.post(
             f"{TELEGRAM_API_URL}/sendMessage",

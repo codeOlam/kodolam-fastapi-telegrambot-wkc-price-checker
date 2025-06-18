@@ -35,9 +35,8 @@ async def set_webhook():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print('[lifespan] running now')
+    # print('[lifespan] running now')
     await set_webhook()
-    # asyncio.create_task(start_price_checker())
     await set_commands()
     yield
 
