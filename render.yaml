@@ -10,15 +10,3 @@ services:
         sync: false #manually set on render dashboard
       - key: CHANNEL_ID
         sync: false
-
-  - type: worker
-    name: kodolam-price-worker
-    env: python
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python worker.py
-    envVars:
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
-      - key: CHANNEL_ID
-        sync: false
