@@ -24,23 +24,49 @@ async def start_price_checker():
 def build_message(prices):
     l = ["*WKC Watcher 👀*\n🚀Live Token Prices🚀\n"]
     w = "wiki-cat"
-    l.append(
-        f"{TOKENS[w]['emoji']} *{TOKENS[w]['display_name']}*: `${format_price(prices[w]) or prices[w]}`")
+
+    def format_line(token_id):
+        token = TOKENS[token_id]
+        price = prices.get(token_id, "—")
+        emoji = token["emoji"]
+
+        # Get change info
+        cached = price_cache.get(token_id, {})
+        chg = cached.get("chg_24")
+        indicator = ""
+        if chg:
+            try:
+                # arrow = "📈" if float(chg.replace('%', '')) >= 0 else "📉"
+                indicator = "💹" if float(chg.replace('%', '')) >= 0 else "🔻"
+            except:
+                indicator = ""
+        chg_txt = f"({chg})" if chg else ""
+
+        return f"{emoji} *{token['display_name']}*: `${format_price(price)}` {indicator} {chg_txt} 24h"
+
+    # Top section: WKC
+    l.append(format_line(w))
     l.append("──────────────────")
-    for k, v in prices.items():
-        if k == w:
-            continue
-        l.append(
-            f"{TOKENS[k]['emoji']} *{TOKENS[k]['display_name']}*: `\t${format_price(v) or v}`")
+
+    # Section: New Tokens
+    l.append("*🎖 Commty Watchlist Tokens*\n")
+    for k in ["the-kingdom-coin", "defi-tiger", "bnbtiger"]:
+        l.append(format_line(k))
+    l.append("──────────────────")
+
+    # Section: Major Coins
+    l.append("*🏅 Major Coins/Alts*\n")
+    for k in ["bitcoin", "ethereum", "ripple", "binancecoin", "solana"]:
+        l.append(format_line(k))
+
     l.append("──────────────────")
     l += [
         "🧵 *Follow:*",
         "🔗 [Creator on X](https://x.com/codeolam)",
         "🔗 [WikiCat on X](https://x.com/wikicatcoin)",
+        "──────────────────",
+        "\n🤖 [More market insights](https://t.me/kodOlam_bot)"
     ]
-
-    l.append("──────────────────")
-    l.append("\n🤖 [More market insights](https://t.me/kodOlam_bot)")
 
     return "\n".join(l)
 

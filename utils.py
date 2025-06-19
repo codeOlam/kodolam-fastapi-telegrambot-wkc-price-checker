@@ -7,17 +7,19 @@ import httpx
 
 CHAT_IDS_FILE = Path("chat_ids.json")
 CHANNEL_ID = os.getenv('CHANNEL_ID')
-# CHANNEL_ID = "-1002703612913"  # This is your @kodOlamWkcWatcher channel ID
-# CHANNEL_ID = "@kodOlamWkcWatcher"  # This is your @kodOlamWkcWatcher channel ID
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{os.getenv('TELEGRAM_BOT_TOKEN')}"
+SUBSCRIPT_MAP = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
 
 TOKENS = {
-    "wiki-cat": {"display_name": "WKC", "emoji": "💰👑📈", "coinlore_id": "70961"},
-    "bitcoin": {"display_name": "BTC", "emoji": "💰📈", "coinlore_id": "90"},
-    "ethereum": {"display_name": "ETH", "emoji": "💰📈", "coinlore_id": "80"},
-    "ripple": {"display_name": "XRP", "emoji": "💰📈", "coinlore_id": "58"},
-    "binancecoin": {"display_name": "BNB", "emoji": "💰📈", "coinlore_id": "2710"},
-    "solana": {"display_name": "SOL", "emoji": "💰📈", "coinlore_id": "48543"},
+    "wiki-cat": {"display_name": "WKC", "emoji": "👑", "coinlore_id": "70961"},
+    "the-kingdom-coin": {"display_name": "TKC", "emoji": "🌟", "coinlore_id": "133151"},
+    "defi-tiger": {"display_name": "DTG", "emoji": "🌟", "coinlore_id": "82727"},
+    "bnbtiger": {"display_name": "BNBTIGER", "emoji": "🌟", "coinlore_id": "85953"},
+    "bitcoin": {"display_name": "BTC", "emoji": "💰", "coinlore_id": "90"},
+    "ethereum": {"display_name": "ETH", "emoji": "💰", "coinlore_id": "80"},
+    "ripple": {"display_name": "XRP", "emoji": "💰", "coinlore_id": "58"},
+    "binancecoin": {"display_name": "BNB", "emoji": "💰", "coinlore_id": "2710"},
+    "solana": {"display_name": "SOL", "emoji": "💰", "coinlore_id": "48543"},
 }
 CACHE_TTL = 60
 price_cache = {}  # Structure: {token_id: {'price': str, 'ts': timestamp}}
@@ -34,16 +36,26 @@ def register_chat_id(chat_id):
         CHAT_IDS_FILE.write_text(json.dumps(ids))
 
 
-def format_price(num):
+def format_price(price):
     try:
-        price = float(num)
+        f = float(price)
+
+        if f >= 0.01:
+            return f"{f:,.2f}"
+        elif f >= 0.00001:
+            return f"{f:.10f}".rstrip("0").rstrip(".")
+        else:
+            # Dexscreener-style formatting with 4 digits after the subscript
+            parts = f"{f:.60f}".split(".")
+            decimals = parts[1].lstrip("0")
+            leading_zeros = len(parts[1]) - len(decimals)
+
+            # Pad with extra zeros if not enough digits
+            significant = (decimals + "0000")[:4]
+            subscript = str(leading_zeros).translate(SUBSCRIPT_MAP)
+            return f"0.0{subscript}{significant}"
     except:
-        return None
-    if price >= 1:
-        return f"{price:,.2f}"
-    elif price >= 0.01:
-        return f"{price:.4f}"
-    return f"{price:.10f}".rstrip("0")
+        return str(price)
 
 
 async def send_message(chat_id, text):
@@ -71,6 +83,7 @@ async def fetch_all_coinlore_prices():
             if token_key:
                 price_cache[token_key] = {
                     "price": coin.get("price_usd", "N/A"),
+                    "chg_24": coin.get("percent_change_24h", None) + "%" if coin.get("percent_change_24h") else None,
                     "ts": now
                 }
 
@@ -96,7 +109,15 @@ async def get_token_info(token_id):
     async with httpx.AsyncClient() as client:
         r = await client.get(f"https://api.coingecko.com/api/v3/coins/{token_id}", params={"localization": "false"})
     if r.status_code != 200:
-        return {"price": format_price(price), "msg": "Metadata unavailable."}
+        return {
+            "price": format_price(price),
+            "market_cap": "—",
+            "vol_24": "—",
+            "chg_24": "—",
+            "supply": "—",
+            "contract": "N/A",
+            "msg": "Could not retrive Metadata."
+        }
     d = r.json().get("market_data", {})
     return {
         "price": format_price(price),
@@ -104,7 +125,8 @@ async def get_token_info(token_id):
         "vol_24": format_price(d["total_volume"]["usd"]) if d.get("total_volume") else "—",
         "chg_24": f"{d.get('price_change_percentage_24h', 0):.2f}%",
         "supply": format_price(d.get("circulating_supply", 0)),
-        "contract": next(iter(r.json().get("platforms", {"N/A": None}).values()), None)
+        "contract": next(iter(r.json().get("platforms", {"N/A": None}).values()), None),
+        "msg": "Success!"
     }
 
 

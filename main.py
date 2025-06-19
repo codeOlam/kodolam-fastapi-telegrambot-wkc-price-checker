@@ -67,10 +67,11 @@ async def webhook(req: Request):
                 f"Vol 24h: ${d['vol_24']}",
                 f"Change 24h: {d['chg_24']}",
                 f"Supply: {d['supply']}",
-                f"Contract: `{d['contract']}`"
+                f"Contract: `{d['contract']}`",
+                f"Msg: `{d['msg']}`"
             ])
         elif cmd == "fear-greed":
-            resp = f"🙀🤑 Fear & Greed\n\n: {await get_fear_greed()}"
+            resp = f"🙀🤑 Fear & Greed:\n\n{await get_fear_greed()}"
         elif cmd == "dominance":
             resp = f"💹 Dominance:\n\n{await get_dominance()}"
     await send_message(cid, resp)
