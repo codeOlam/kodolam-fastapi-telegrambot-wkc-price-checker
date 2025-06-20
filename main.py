@@ -80,6 +80,6 @@ async def webhook(req: Request):
 
 # this will work with uptimeroobot to kep render.com alive,
 # if you are using free tier else comment out
-@app.get("/ping")
+@app.api_route("/ping", methods=["GET", "HEAD"])
 async def ping():
     return {"status": "ok"}
