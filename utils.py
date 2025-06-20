@@ -104,44 +104,83 @@ async def get_price_coinlore(token_id):
 
 
 async def get_token_info(token_id):
-    price = await get_price_coinlore(token_id) or "—"
-    # fetch metadata from CoinGecko for extras
-    async with httpx.AsyncClient() as client:
-        r = await client.get(f"https://api.coingecko.com/api/v3/coins/{token_id}", params={"localization": "false"})
-    if r.status_code != 200:
+    # Try fetching price from CoinLore
+    try:
+        price = await get_price_coinlore(token_id) or "—"
+    except Exception as e:
+        print(f"Error fetching price from CoinLore: {e}")
+        price = "—"
+
+    # Try fetching metadata from CoinGecko
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(
+                f"https://api.coingecko.com/api/v3/coins/{token_id}",
+                params={"localization": "false"}
+            )
+            r.raise_for_status()  # Raise if HTTP error (4xx/5xx)
+            data = r.json()
+
+        market_data = data.get("market_data", {})
+        platforms = data.get("platforms", {"N/A": None})
+
         return {
             "price": format_price(price),
-            "market_cap": "—",
-            "vol_24": "—",
-            "chg_24": "—",
-            "supply": "—",
-            "contract": "N/A",
-            "msg": "Could not retrive Metadata."
+            "market_cap": format_price(market_data.get("market_cap", {}).get("usd", 0)) if market_data else "—",
+            "vol_24": format_price(market_data.get("total_volume", {}).get("usd", 0)) if market_data else "—",
+            "chg_24": f"{market_data.get('price_change_percentage_24h', 0):.2f}%",
+            "supply": format_price(market_data.get("circulating_supply", 0)),
+            "contract": next(iter(platforms.values()), "N/A"),
+            "msg": "Success!"
         }
-    d = r.json().get("market_data", {})
+
+    except Exception as e:
+        traceback.print_exc()
+
+    # If anything goes wrong, return fallback response
     return {
         "price": format_price(price),
-        "market_cap": format_price(d["market_cap"]["usd"]) if d.get("market_cap") else "—",
-        "vol_24": format_price(d["total_volume"]["usd"]) if d.get("total_volume") else "—",
-        "chg_24": f"{d.get('price_change_percentage_24h', 0):.2f}%",
-        "supply": format_price(d.get("circulating_supply", 0)),
-        "contract": next(iter(r.json().get("platforms", {"N/A": None}).values()), None),
-        "msg": "Success!"
+        "market_cap": "—",
+        "vol_24": "—",
+        "chg_24": "—",
+        "supply": "—",
+        "contract": "N/A",
+        "msg": f"⚠️ Could not retrieve information"
     }
 
 
 async def get_fear_greed():
-    async with httpx.AsyncClient() as client:
-        r = await client.get("https://api.alternative.me/fng/")
-    if r.status_code != 200:
-        return "Unavailable"
-    d = r.json()["data"][0]
-    return f"{d['value']} ({d['value_classification']})"
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get("https://api.alternative.me/fng/")
+            r.raise_for_status()  # Raises for 4xx/5xx errors
+
+        data = r.json()
+        fng = data.get("data", [{}])[0]
+        value = fng.get("value")
+        classification = fng.get("value_classification")
+
+        if not value or not classification:
+            raise ValueError("Incomplete F&G data")
+
+        return f"{value} ({classification})"
+
+    except Exception as e:
+        traceback.print_exc()
+
+    return f"⚠️ Fear & Greed Index: Unavailable at the moment"
 
 
 async def get_dominance():
-    async with httpx.AsyncClient() as client:
-        r = await client.get("https://api.coingecko.com/api/v3/global")
-    d = r.json()["data"]["market_cap_percentage"]
-    btc, eth = d.get("btc", 0), d.get("eth", 0)
-    return f"BTC: \t{btc:.2f}%\nETH: \t{eth:.2f}%\nAlt: \t{100-btc-eth:.2f}%"
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.get("https://api.coingecko.com/api/v3/global", timeout=10)
+        r.raise_for_status()
+        data = r.json().get("data", {}).get("market_cap_percentage", {})
+
+        btc, eth = float(data.get("btc", 0)), float(data.get("eth", 0))
+        alt = round(100 - btc - eth, 2)
+        return f"BTC: \t{btc:.2f}%\nETH: \t{eth:.2f}%\nAlt: \t{alt:.2f}%"
+    except Exception as error:
+        traceback.print_exc()
+        return f"⚠️ Could not fetch dominance at the moment"
