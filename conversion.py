@@ -31,7 +31,7 @@ async def handle_price_it_flow(chat_id, message_text):
                     f"{token['emoji']} {token['display_name']}: `{tokens:,.0f}`")
             except:
                 continue
-        return await send_message(chat_id, "*You can buy:*\n" + "\n".join(conversions))
+        return await send_message(chat_id, f"*What {amount} can buy:*\n" + "\n".join(conversions))
 
     # Token → USD
     symbol_map = {v["display_name"].lower(): k for k, v in TOKENS.items()}
@@ -43,7 +43,7 @@ async def handle_price_it_flow(chat_id, message_text):
     try:
         total = float(price) * amount
         await send_message(chat_id,
-                           f"{TOKENS[token_id]['emoji']} *{amount} {TOKENS[token_id]['display_name']}* is worth:\n`${format_price(total)}`"
+                           f"{TOKENS[token_id]['emoji']} *{amount:,.0f} {TOKENS[token_id]['display_name']}* is worth:\n`${format_price(total)}`"
                            )
     except Exception as e:
         await send_message(chat_id, "⚠️ Could not calculate at the moment.")
