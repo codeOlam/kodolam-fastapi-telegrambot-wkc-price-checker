@@ -14,13 +14,14 @@ BOT = os.getenv("TELEGRAM_BOT_TOKEN")
 
 
 async def set_commands():
-    cmds = [{"command": "price", "description": "Show all prices"}]
+    cmds = [{"command": "price", "description": "Show all prices"}, {
+        "command": "price_it", "description": "Convert token ⇄ USD"}]
     cmds += [{"command": f"info_{k.replace('-', '_')}",
               "description": f"Info on {v['display_name']}"} for k, v in TOKENS.items()]
     cmds += [
         {"command": "info_fear_greed", "description": "Fear & Greed index"},
         {"command": "info_dominance", "description": "Market dominance"},
-        {"command": "price_it", "description": "Convert token ⇄ USD"}
+
     ]
     async with httpx.AsyncClient() as c:
         await c.post(f"{TELEGRAM_API_URL}/setMyCommands", json={"commands": cmds})
@@ -60,7 +61,7 @@ async def webhook(req: Request):
         resp = build_message(prices)
     elif t == "/price_it":
         return await send_message(
-            cid, "💱 Send a token amount like `10 wkc` or a USD value like `$5`. I'll convert it for you!"
+            cid, "💱 Send a token amount like `10 wkc` or a USD value like `$5`. I'll price it for you!"
         )
 
     elif AMOUNT_PATTERN.match(t or ""):

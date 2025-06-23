@@ -174,13 +174,29 @@ async def get_fear_greed():
 async def get_dominance():
     try:
         async with httpx.AsyncClient() as client:
-            r = await client.get("https://api.coingecko.com/api/v3/global", timeout=10)
-        r.raise_for_status()
-        data = r.json().get("data", {}).get("market_cap_percentage", {})
+            r = await client.get("https://api.coinlore.net/api/global/")
+            r.raise_for_status()
+            d = r.json()[0]
 
-        btc, eth = float(data.get("btc", 0)), float(data.get("eth", 0))
+        btc = float(d.get("btc_d", 0))
+        eth = float(d.get("eth_d", 0))
         alt = round(100 - btc - eth, 2)
         return f"BTC: \t{btc:.2f}%\nETH: \t{eth:.2f}%\nAlt: \t{alt:.2f}%"
-    except Exception as error:
+
+    except Exception:
         traceback.print_exc()
-        return f"⚠️ Could not fetch dominance at the moment"
+        return "⚠️ Could not fetch dominance info right now"
+
+# async def get_dominance():
+#     try:
+#         async with httpx.AsyncClient() as client:
+#             r = await client.get("https://api.coingecko.com/api/v3/global", timeout=10)
+#         r.raise_for_status()
+#         data = r.json().get("data", {}).get("market_cap_percentage", {})
+
+#         btc, eth = float(data.get("btc", 0)), float(data.get("eth", 0))
+#         alt = round(100 - btc - eth, 2)
+#         return f"BTC: \t{btc:.2f}%\nETH: \t{eth:.2f}%\nAlt: \t{alt:.2f}%"
+#     except Exception as error:
+#         traceback.print_exc()
+#         return f"⚠️ Could not fetch dominance at the moment"
