@@ -17,7 +17,7 @@ BOT = os.getenv("TELEGRAM_BOT_TOKEN")
 async def set_commands():
     cmds = [
         {"command": "price", "description": "Show all prices"},
-        {"command": "Dre_price_it", "description": "Dre will to advice you on token ⇄ USD"}
+        {"command": "dre_price_it", "description": "Dre will to advice you on token ⇄ USD"}
     ]
     cmds += [{"command": f"info_{k.replace('-', '_')}",
               "description": f"{TOKENS[k]['display_name']} info"} for k in TOKENS]
@@ -28,9 +28,12 @@ async def set_commands():
 
 
 async def set_webhook():
-    url = f"https://{os.getenv('RENDER_SERVICE')}.onrender.com/webhook"
-    async with httpx.AsyncClient() as c:
-        await c.post(f"{TELEGRAM_API_URL}/setWebhook", data={"url": url})
+    webhook_url = f"https://kodolam-bot-api.onrender.com/webhook"
+    async with httpx.AsyncClient() as client:
+        await client.post(
+            f"{TELEGRAM_API_URL}/setWebhook",
+            data={"url": webhook_url}
+        )
 
 
 @asynccontextmanager
@@ -51,13 +54,13 @@ async def webhook(req: Request):
     if cid:
         register_chat_id(cid)
 
-    resp = "👋 Use /price or /Dre_price_it"
+    resp = "👋 Use /price or /dre_price_it"
     if t == "/price":
         prices = {}
         for k in TOKENS:
             prices[k] = await get_price_with_change(k)
         resp = build_message(prices)
-    elif t == "/Dre_price_it":
+    elif t == "/dre_price_it":
         return await send_message(cid, "🚀 Yo yo! Dre in the house. Tell me what you're stackin' — `10 wkc` or maybe `$20`? Let me flip the math for ya 📊💰"
                                   )
     elif AMOUNT_PATTERN.match(t or ""):
