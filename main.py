@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 import httpx
 import os
+from conversion import AMOUNT_PATTERN, handle_price_it_flow
 from utils import (
     register_chat_id, TOKENS, get_price_coinlore, get_token_info,
     get_fear_greed, get_dominance, format_price, send_message, TELEGRAM_API_URL
@@ -18,7 +19,8 @@ async def set_commands():
               "description": f"Info on {v['display_name']}"} for k, v in TOKENS.items()]
     cmds += [
         {"command": "info_fear_greed", "description": "Fear & Greed index"},
-        {"command": "info_dominance", "description": "Market dominance"}
+        {"command": "info_dominance", "description": "Market dominance"},
+        {"command": "price_it", "description": "Convert token ⇄ USD"}
     ]
     async with httpx.AsyncClient() as c:
         await c.post(f"{TELEGRAM_API_URL}/setMyCommands", json={"commands": cmds})
@@ -56,6 +58,13 @@ async def webhook(req: Request):
     if t == "/price":
         prices = {k: (await get_price_coinlore(k)) or format_price(msg) for k in TOKENS}
         resp = build_message(prices)
+    elif t == "/price_it":
+        return await send_message(
+            cid, "💱 Send a token amount like `10 wkc` or a USD value like `$5`. I'll convert it for you!"
+        )
+
+    elif AMOUNT_PATTERN.match(t or ""):
+        return await handle_price_it_flow(cid, t)
     elif t.startswith("/info_"):
         cmd = t[6:].replace("_", "-")
         if cmd in TOKENS:
