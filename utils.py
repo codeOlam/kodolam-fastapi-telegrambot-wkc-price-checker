@@ -1,3 +1,4 @@
+import re
 import os
 import time
 import json
@@ -84,29 +85,59 @@ def format_price(p):
         return str(p)
 
 
+def parse_price(s):
+    """Convert formatted price string (e.g. '0.0₇1234') or scientific string to float."""
+    try:
+        if isinstance(s, (float, int)):
+            return float(s)
+
+        s = str(s).strip()
+
+        # Regular float or scientific notation
+        if re.fullmatch(r"-?\d+(\.\d+)?([eE][-+]?\d+)?", s):
+            return float(s)
+
+        # Match format like: 0.0₇1234
+        if s.startswith("0.0₍") or s.startswith("0.0₇"):
+            match = re.match(r"0\.0₍?(\d+)₎?(\d+)", s)
+            if match:
+                leading_zeros = int(match.group(1))
+                sig_digits = match.group(2)
+                return float(f"0.{'0'*leading_zeros}{sig_digits}")
+
+        return float(s)
+    except Exception:
+        traceback.print_exc()
+        return 0.0
+
+
 async def get_price_with_change(token_id):
     token = TOKENS.get(token_id)
     if not token:
-        return {"price": "N/A", "chg_24": "—"}
+        return {"price": "N/A", "raw_price": 0, "chg_24": "—"}
 
     if "contract" in token:  # DexScreener tokens
         data = await get_token_info_dexscreener(token_id)
         return {
             "price": data.get("price", "N/A"),
+            "raw_price": data.get("raw_price", 0),
             "chg_24": data.get("chg_24", "—")
         }
 
-    # CoinLore tokens (major coins)
     now = time.time()
     if token_id in price_cache and now - price_cache[token_id]["ts"] < CACHE_TTL:
+        raw_price = float(price_cache[token_id].get("price", 0))
         return {
-            "price": price_cache[token_id].get("price", "N/A"),
+            "price": format_price(raw_price),
+            "raw_price": raw_price,
             "chg_24": price_cache[token_id].get("chg_24", "—")
         }
 
     await fetch_all_coinlore_prices()
+    raw_price = float(price_cache.get(token_id, {}).get("price", 0))
     return {
-        "price": price_cache.get(token_id, {}).get("price", "N/A"),
+        "price": format_price(raw_price),
+        "raw_price": raw_price,
         "chg_24": price_cache.get(token_id, {}).get("chg_24", "—")
     }
 
@@ -138,6 +169,7 @@ async def get_token_info_dexscreener(token_id):
     if not d:
         return {
             "price": "N/A",
+            "raw_price": "N/A",
             "market_cap": "—",
             "vol_24": "—",
             "chg_24": "—",
@@ -159,6 +191,7 @@ async def get_token_info_dexscreener(token_id):
 
     return {
         "price": format_price(d.get("priceUsd", "N/A")),
+        "raw_price": float(d.get("priceUsd", 0)),
         "market_cap": format_price(market_cap_str),
         "vol_24": format_price(volume),
         "chg_24": f"{float(d.get('priceChange', {}).get('h24', 0)):.2f}%",
