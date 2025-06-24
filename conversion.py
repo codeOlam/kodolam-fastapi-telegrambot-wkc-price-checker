@@ -17,6 +17,7 @@ async def handle_price_it_flow(chat_id, text):
     except:
         return await send_message(chat_id, "🧐 Hmmm… Dre says that number doesn't look right.")
 
+    # USD => Token
     if is_usd:
         lines = []
         for k, tok in TOKENS.items():
@@ -25,11 +26,13 @@ async def handle_price_it_flow(chat_id, text):
             if price > 0:
                 try:
                     n = amt / price
+                    formatted_n = f"{n:,.0f}" if n >= 1 else f"{n:.8f}"
                     lines.append(
-                        f"{tok['emoji']} {tok['display_name']}: `{n:,.0f}`")
+                        f"{tok['emoji']} {tok['display_name']}: `{formatted_n}`")
                 except:
+                    traceback.print_exc()
                     continue
-        return await send_message(chat_id, f"*😎 Dre says you can get this for ${amt}:*\n\n" + "\n".join(lines))
+        return await send_message(chat_id, f"* Dre says you can get this for ${amt}:*\n\n" + "\n".join(lines))
 
     # Token => USD
     cmap = {v["display_name"].lower(): k for k, v in TOKENS.items()}
@@ -43,7 +46,7 @@ async def handle_price_it_flow(chat_id, text):
             tot = price * amt
             return await send_message(
                 chat_id,
-                f"💵 Dre ran the numbers: {TOKENS[token]['emoji']} *{amt:,.0f} {TOKENS[token]['display_name']}* ≈ `$ {format_price(tot)}`"
+                f"*😎 Dre ran the numbers:*\n\n {TOKENS[token]['emoji']} *{amt:,.0f} {TOKENS[token]['display_name']}* ≈ `$ {format_price(tot)}`"
             )
     except:
         traceback.print_exc()
