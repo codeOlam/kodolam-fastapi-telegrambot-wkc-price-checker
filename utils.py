@@ -5,6 +5,7 @@ import json
 import traceback
 import httpx
 from pathlib import Path
+from datetime import datetime
 
 CHAT_IDS_FILE = Path("chat_ids.json")
 CHANNEL_ID = os.getenv('CHANNEL_ID')
@@ -85,23 +86,47 @@ def register_chat_id(chat_id):
         CHAT_IDS_FILE.write_text(json.dumps(ids))
 
 
-def format_large_number(n):
+def format_change(chg):
+    try:
+        chg_str = str(chg).replace('%', '').strip()
+        val = float(chg_str)
+
+        if val > 0:
+            return f"+{val:.2f}% ↑"
+        elif val < 0:
+            return f"{val:.2f}% ↓"
+        else:
+            return f"0.00%"
+    except:
+        return "—"
+
+
+def format_large_number(n, compact=False):
     try:
         n = float(n)
         abs_n = abs(n)
 
-        if abs_n >= 1e+18:
+        if not compact:
+            return f"{n:,.2f}"
+
+        if abs_n >= 1e+27:
+            return f"{n / 1e+27:.2f}O"  # Octillion
+        elif abs_n >= 1e+24:
+            return f"{n / 1e+24:.2f}S"  # Septillion
+        elif abs_n >= 1e+21:
+            return f"{n / 1e+21:.2f}Q"  # Sextillion
+        elif abs_n >= 1e+18:
             return f"{n / 1e+18:.2f}Qi"  # Quintillion
         elif abs_n >= 1e+15:
-            return f"{n / 1e+15:.2f}Q"   # Quadrillion
+            return f"{n / 1e+15:.2f}P"  # Quadrillion
         elif abs_n >= 1e+12:
-            return f"{n / 1e+12:.2f}T"   # Trillion
+            return f"{n / 1e+12:.2f}T"  # Trillion
         elif abs_n >= 1e+9:
-            return f"{n / 1e+9:.2f}B"    # Billion
+            return f"{n / 1e+9:.2f}B"   # Billion
         elif abs_n >= 1e+6:
-            return f"{n / 1e+6:.2f}M"    # Million
+            return f"{n / 1e+6:.2f}M"   # Million
         elif abs_n >= 1e+3:
-            return f"{n / 1e+3:.2f}K"    # Thousand
+            return f"{n / 1e+3:.2f}K"   # Thousand
         else:
             return f"{n:,.2f}"
     except:
@@ -111,8 +136,8 @@ def format_large_number(n):
 def format_price(p, compact=False):
     try:
         f = float(p)
-        if compact and f >= 1_000_000:
-            return format_large_number(f)
+        if compact and f >= 1_000:
+            return format_large_number(f, compact=True)
         if f >= 0.01:
             return f"{f:,.2f}"
         elif f >= 0.00001:
@@ -215,9 +240,12 @@ async def get_token_info_dexscreener(token_id):
             "price": "N/A",
             "raw_price": "N/A",
             "market_cap": "—",
+            "liquidity": "—",
             "vol_24": "—",
             "chg_24": "—",
             "supply": "—",
+            "txns": {"buys": "-", "sells": "-"},
+            "created_at": "-",
             "contract": TOKENS[token_id].get("contract"),
             "msg": "⚠️ No data"
         }
@@ -229,18 +257,25 @@ async def get_token_info_dexscreener(token_id):
     price = float(price_str) if price_str not in [None, "N/A"] else 0
     market_cap = float(market_cap_str) if market_cap_str not in [
         None, "N/A"] else 0
+    created_at_ts = d.get("pairCreatedAt")
+    txns = d.get("txns", {}).get("h24", {})
+    txns_formatted = f"Buys: {txns.get('buys', 0)} | Sells: {txns.get('sells', 0)}"
+    liquidity = d.get("liquidity", {}).get("usd", "-")
 
     # Calculate estimated circulating supply
     supply = market_cap / price if price > 0 else "N/A"
 
     return {
         "name": d.get("baseToken", {}).get("name", "N/A"),
-        "price": format_price(d.get("priceUsd", "N/A")),
+        "price": format_price(d.get("priceUsd", "-")),
         "raw_price": float(d.get("priceUsd", 0)),
         "market_cap": format_price(market_cap_str, compact=True),
-        "vol_24": format_price(volume),
+        "liquidity": format_price(liquidity, compact=True),
+        "vol_24": format_price(volume, compact=True),
         "chg_24": f"{float(d.get('priceChange', {}).get('h24', 0)):.2f}%",
         "supply": format_price(supply, compact=True),
+        "txns": txns_formatted,
+        "created_at": datetime.fromtimestamp(created_at_ts / 1000).strftime('%Y-%m-%d') if created_at_ts else "—",
         "contract": d.get("pairAddress", TOKENS[token_id].get("contract")),
         "msg": "✅ Ok 200"
     }
@@ -278,12 +313,16 @@ async def get_token_info(token_id):
     await fetch_all_coinlore_prices()
     data = price_cache.get(token_id, {})
     return {
+        "name": TOKENS[token_id]['display_name'],
         "price": format_price(data.get("price", "N/A")),
-        "market_cap": format_price(data.get("market_cap", "N/A")),
-        "vol_24": format_price(data.get("vol_24", "N/A")),
+        "market_cap": format_price(data.get("market_cap", "N/A"), compact=True),
+        "liquidity": " N/A",
+        "vol_24": format_price(data.get("vol_24", "N/A"), compact=True),
         "chg_24": data.get("chg_24", "—"),
-        "supply": format_price(data.get("supply", "N/A")),
-        "contract": "N/A",
+        "supply": format_price(data.get("supply", "N/A"), compact=True),
+        "txns": " N/A",
+        "created_at": " N/A",
+        "contract": " N/A",
         "msg": "✅ Ok 200"
     }
 
