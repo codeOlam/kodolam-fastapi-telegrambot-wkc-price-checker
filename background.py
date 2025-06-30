@@ -22,8 +22,8 @@ def build_message(prices):
         token_data = prices.get(k, {})
         price = token_data.get("price", "N/A")
         chg = token_data.get("chg_24", "—")
-
         indicator = ""
+
         try:
             chg_num = float(chg.replace('%', '').strip())
             indicator = "💹" if chg_num >= 0 else "🔻"

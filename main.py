@@ -5,7 +5,7 @@ import os
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 from utils import (
-    get_price_with_change, register_chat_id, TOKENS,
+    format_change, get_price_with_change, register_chat_id, TOKENS,
     get_token_info_dexscreener, get_token_info,
     get_fear_greed, get_dominance, send_message, TELEGRAM_API_URL
 )
@@ -71,18 +71,44 @@ async def webhook(req: Request):
     elif t.startswith("/info_"):
         cmd = t.split("_", 1)[1].replace("_", "-")
         if cmd in TOKENS:
-            d = await (get_token_info_dexscreener(cmd) if TOKENS[cmd].get("contract") else get_token_info(cmd))
-            return await send_message(cid, "\n".join([
-                f"*{TOKENS[cmd]['display_name']} Info*\n",
-                f"Name: {d['name']}",
-                f"Price: ${d['price']}",
-                f"Market Cap: ${d['market_cap']}",
-                f"Vol 24h: ${d['vol_24']}",
-                f"Change 24h: {d['chg_24']}",
-                f"Supply: {d['supply']}",
-                f"Contract: `{d['contract']}`",
-                f"Status: {d['msg']}"
-            ]))
+            if TOKENS[cmd].get("contract"):
+                d = await get_token_info_dexscreener(cmd)
+                return await send_message(cid, "\n".join([
+                    f"*{TOKENS[cmd]['display_name']} Info*\n",
+                    f"💡 Name: {d['name']}",
+                    f"💰 Price: ${d['price']} | 📉 24h: {format_change(d['chg_24'])}",
+                    f"📊 MCap: ${d['market_cap']} | 💧 Liq: ${d['liquidity']}",
+                    f"📈 Vol 24h: ${d['vol_24']} | 🔢 Sup: {d['supply']}",
+                    f"🔁 Txns 24h: {d['txns']}",
+                    f"🚀 Lunched: {d['created_at']}",
+                    f"🧾 Contract: `{d['contract']}`",
+                    f"Status: {d['msg']}"
+                ]))
+            else:
+                d = await get_token_info(cmd)
+                return await send_message(cid, "\n".join([
+                    f"*{TOKENS[cmd]['display_name']} Info*\n",
+                    f"💡 Name: {d['name']}",
+                    f"💰 Price: ${d['price']}",
+                    f"📉 Chg 24h: {format_change(d['chg_24'])}",
+                    f"📊 MCap: ${d['market_cap']}",
+                    f"📈 Vol 24h: ${d['vol_24']}",
+                    f"🔢 Sup: {d['supply']}",
+                    f"Status: {d['msg']}"
+                ]))
+
+            # d = await (get_token_info_dexscreener(cmd) if TOKENS[cmd].get("contract") else get_token_info(cmd))
+            # return await send_message(cid, "\n".join([
+            #     f"*{TOKENS[cmd]['display_name']} Info*\n",
+            #     f"💡 Name: {d['name']}",
+            #     f"💰 Price: ${d['price']} | 📉 Chg 24h: {format_change(d['chg_24'])}",
+            #     f"📊 MCap: ${d['market_cap']} | 💧 Liq: ${d['liquidity']}",
+            #     f"📈 Vol 24h: ${d['vol_24']} | 🔢 Sup: {d['supply']}",
+            #     f"🔁 Txns 24h: {d['txns']}",
+            #     f"🚀 Lunched: {d['created_at']}",
+            #     f"🧾 Contract: `{d['contract']}`",
+            #     f"Status: {d['msg']}"
+            # ]))
         elif cmd == "fear":
             return await send_message(cid, f"🙀🤑 Fear & Greed: {await get_fear_greed()}")
         elif cmd == "dominance":
