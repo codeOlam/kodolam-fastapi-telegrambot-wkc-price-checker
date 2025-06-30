@@ -36,7 +36,8 @@ def build_message(prices):
         "*WKC Watcher 👀*\n🚀Live Token Prices🚀\n",
         line("wiki-cat"), "──────────────────",
         "*🎖 Commty Watchlist*\n", *
-        (line(k) for k in ["the-kingdom-coin", "defi-tiger", "bnbtiger"]),
+        (line(k)
+         for k in ["the-kingdom-coin", "defi-tiger", "bnbtiger", "ocicat", "watter-rabbit", "catcoin"]),
         "──────────────────", "*🏅 Major Coins*\n", *
         (line(k)
          for k in ["bitcoin", "ethereum", "ripple", "binancecoin", "solana"]),

@@ -37,6 +37,24 @@ TOKENS = {
         "contract": "0x5e1AAb9d49F6C7122df7dE4d6dBd5b03C1EBB0B7",
         "chain": "bsc"
     },
+    "ocicat":   {
+        "display_name": "Ocicat",
+        "emoji": "🌟",
+        "contract": "0x1df65d3a75AeCd000A9c17c97E99993aF01DbcD1",
+        "chain": "bsc"
+    },
+    "watter-rabbit":   {
+        "display_name": "WAR",
+        "emoji": "🌟",
+        "contract": "0xF1C2D7d7e539a02acC3f0C46Ca1e83c0F69BAaC2",
+        "chain": "bsc"
+    },
+    "catcoin":   {
+        "display_name": "CATS",
+        "emoji": "🌟",
+        "contract": "0x56C2723807C398a5D263C698d660165802F104a8",
+        "chain": "bsc"
+    },
     "bitcoin":    {"display_name": "BTC",      "emoji": "💰", "coinlore_id": "90"},
     "ethereum":   {"display_name": "ETH",      "emoji": "💰", "coinlore_id": "80"},
     "ripple":     {"display_name": "XRP",      "emoji": "💰", "coinlore_id": "58"},
@@ -67,9 +85,34 @@ def register_chat_id(chat_id):
         CHAT_IDS_FILE.write_text(json.dumps(ids))
 
 
-def format_price(p):
+def format_large_number(n):
+    try:
+        n = float(n)
+        abs_n = abs(n)
+
+        if abs_n >= 1e+18:
+            return f"{n / 1e+18:.2f}Qi"  # Quintillion
+        elif abs_n >= 1e+15:
+            return f"{n / 1e+15:.2f}Q"   # Quadrillion
+        elif abs_n >= 1e+12:
+            return f"{n / 1e+12:.2f}T"   # Trillion
+        elif abs_n >= 1e+9:
+            return f"{n / 1e+9:.2f}B"    # Billion
+        elif abs_n >= 1e+6:
+            return f"{n / 1e+6:.2f}M"    # Million
+        elif abs_n >= 1e+3:
+            return f"{n / 1e+3:.2f}K"    # Thousand
+        else:
+            return f"{n:,.2f}"
+    except:
+        return str(n)
+
+
+def format_price(p, compact=False):
     try:
         f = float(p)
+        if compact and f >= 1_000_000:
+            return format_large_number(f)
         if f >= 0.01:
             return f"{f:,.2f}"
         elif f >= 0.00001:
@@ -168,6 +211,7 @@ async def get_token_info_dexscreener(token_id):
     d = await get_dexscreener_data(token_id)
     if not d:
         return {
+            "name": "N/A",
             "price": "N/A",
             "raw_price": "N/A",
             "market_cap": "—",
@@ -190,12 +234,13 @@ async def get_token_info_dexscreener(token_id):
     supply = market_cap / price if price > 0 else "N/A"
 
     return {
+        "name": d.get("baseToken", {}).get("name", "N/A"),
         "price": format_price(d.get("priceUsd", "N/A")),
         "raw_price": float(d.get("priceUsd", 0)),
-        "market_cap": format_price(market_cap_str),
+        "market_cap": format_price(market_cap_str, compact=True),
         "vol_24": format_price(volume),
         "chg_24": f"{float(d.get('priceChange', {}).get('h24', 0)):.2f}%",
-        "supply": format_price(supply),
+        "supply": format_price(supply, compact=True),
         "contract": d.get("pairAddress", TOKENS[token_id].get("contract")),
         "msg": "✅ Ok 200"
     }

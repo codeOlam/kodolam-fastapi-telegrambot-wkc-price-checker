@@ -73,14 +73,15 @@ async def webhook(req: Request):
         if cmd in TOKENS:
             d = await (get_token_info_dexscreener(cmd) if TOKENS[cmd].get("contract") else get_token_info(cmd))
             return await send_message(cid, "\n".join([
-                f"*{TOKENS[cmd]['display_name']} Info*",
+                f"*{TOKENS[cmd]['display_name']} Info*\n",
+                f"Name: {d['name']}",
                 f"Price: ${d['price']}",
                 f"Market Cap: ${d['market_cap']}",
                 f"Vol 24h: ${d['vol_24']}",
                 f"Change 24h: {d['chg_24']}",
                 f"Supply: {d['supply']}",
                 f"Contract: `{d['contract']}`",
-                f"Note: {d['msg']}"
+                f"Status: {d['msg']}"
             ]))
         elif cmd == "fear":
             return await send_message(cid, f"🙀🤑 Fear & Greed: {await get_fear_greed()}")
