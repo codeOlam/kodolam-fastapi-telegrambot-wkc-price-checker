@@ -86,6 +86,19 @@ def register_chat_id(chat_id):
         CHAT_IDS_FILE.write_text(json.dumps(ids))
 
 
+async def send_message_with_buttons(chat_id, text, inline_buttons):
+    async with httpx.AsyncClient() as client:
+        await client.post(
+            f"{TELEGRAM_API_URL}/sendMessage",
+            json={
+                "chat_id": chat_id,
+                "text": text,
+                "parse_mode": "Markdown",
+                "reply_markup": {"inline_keyboard": inline_buttons}
+            }
+        )
+
+
 def format_change(chg):
     try:
         chg_str = str(chg).replace('%', '').strip()
@@ -335,7 +348,7 @@ async def get_fear_greed():
             r = await c.get("https://api.alternative.me/fng/")
             r.raise_for_status()
         d = r.json().get("data", [{}])[0]
-        return f"{d.get('value', '?')} ({d.get('value_classification', '?')})"
+        return f"\nMeter: {d.get('value', '?')} ({d.get('value_classification', '?')})"
     except:
         traceback.print_exc()
         return "⚠️ Unavailable"

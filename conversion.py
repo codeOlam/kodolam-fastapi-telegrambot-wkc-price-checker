@@ -1,6 +1,6 @@
 import re
 import traceback
-from utils import TOKENS, format_price, get_price_with_change, parse_price, send_message
+from utils import TOKENS, format_price, get_price_with_change, parse_price, send_message, send_message_with_buttons
 
 AMOUNT_PATTERN = re.compile(r"^\s*(\$?)([\d.,eE+-]+)\s*([A-Za-z0-9_-]*)\s*$")
 
@@ -51,3 +51,16 @@ async def handle_price_it_flow(chat_id, text):
     except:
         traceback.print_exc()
         return await send_message(chat_id, "🛠️ Dre hit a snag crunching those numbers.")
+
+
+async def start_dre_flow(chat_id):
+    return await send_message_with_buttons(
+        chat_id,
+        "🧮 Dre Price It — What do you want to convert?",
+        [
+            [
+                {"text": "💵 USD → Tokens", "callback_data": "dre_usd_to_token"},
+                {"text": "🪙 Token → USD", "callback_data": "dre_token_to_usd"}
+            ]
+        ]
+    )
