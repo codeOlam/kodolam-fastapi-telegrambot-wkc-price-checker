@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from background import start_price_checker
 from conversion import AMOUNT_PATTERN, handle_price_it_flow
 from tokenInfo import handle_token_info
-from marketOracle import EmjayState, start_emjay_oracle
+from marketOracle import EmjayState, show_emjay_ninja_buttons, start_emjay_oracle
 from utils import (
     get_dominance, get_fear_greed, register_chat_id, TOKENS,
     send_message_with_buttons, send_message, TELEGRAM_API_URL
@@ -98,19 +98,7 @@ async def webhook(req: Request):
 
         elif data_cb == "emjay_market_oracle":
             DRE_ACTIVE_USERS.pop(cid, None)  # Clear Dre flow
-            buttons = []
-            row = []
-            for k, v in TOKENS.items():
-                if "pairAddress" not in v:
-                    continue
-                row.append(
-                    {"text": f"{v['emoji']} {v['display_name']}", "callback_data": f"oracle|{k}"})
-                if len(row) == 2:
-                    buttons.append(row)
-                    row = []
-            if row:
-                buttons.append(row)
-            return await send_message_with_buttons(cid, "🥷 Emjay says: pick any token", buttons)
+            return await show_emjay_ninja_buttons(cid)
 
         elif data_cb.startswith("oracle|"):
             DRE_ACTIVE_USERS.pop(cid, None)  # Clear Dre flow
@@ -126,6 +114,32 @@ async def webhook(req: Request):
             DRE_ACTIVE_USERS.pop(cid, None)
             EmjayState.pop(cid, None)
             return await send_message_with_buttons(cid, "❌ Operation canceled.", MAIN_MENU)
+
+        elif data_cb == "emjay_cancel":
+            EmjayState.pop(cid, None)
+            return await send_message_with_buttons(cid, "❌ Operation canceled.", MAIN_MENU)
+
+        elif data_cb == "emjay_reset":
+            EmjayState.pop(cid, None)
+            return await show_emjay_ninja_buttons(cid)
+
+        elif data_cb == "go_home":
+            EmjayState.pop(cid, None)
+            DRE_ACTIVE_USERS.pop(cid, None)
+            return await send_message_with_buttons(cid, "🏠 Back to main menu", MAIN_MENU)
+
+        elif data_cb == "emjay_how":
+            return await send_message(cid,
+                                      "\n".join(["📘 *How Emjay Calculates*\n\n",
+                                                 "1. *Price @ MC* = Market Cap ÷ Total Supply\n",
+                                                 "2. *Cost @ Entry* = Tokens x Entry Price\n",
+                                                 "3. *Value @ Exit* = Tokens x Exit Price\n",
+                                                 "4. *Gain* = Exit Price ÷ Entry Price\n",
+                                                 "5. *Profit* = Value @ Exit - Cost @ Entry\n\n",
+                                                 "⚠️ This tool does *not* simulate tax/burns or liquidity effects.\n",
+                                                 "_For tokens with deflation, future supply may be lower than now._",
+                                                 "\n🔗 TG: @kodOlamWkcWatcher"]),
+                                      )
 
     if msg == "/start":
         return await send_message_with_buttons(cid, "👋 Welcome! Choose an option:", MAIN_MENU)
