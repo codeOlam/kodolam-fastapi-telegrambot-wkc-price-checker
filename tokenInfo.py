@@ -6,7 +6,7 @@ from utils import (
 
 async def handle_token_info(chat_id, key):
     token = TOKENS[key]
-    if token.get("contract"):
+    if token.get("pairAddress"):
         d = await get_token_info_dexscreener(key)
         return await send_message(chat_id, "\n".join([
             f"*{token['display_name']} Info*\n",

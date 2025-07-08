@@ -17,43 +17,43 @@ TOKENS = {
     "wiki-cat":    {
         "display_name": "WKC",
         "emoji": "👑",
-        "contract": "0x933477eba23726cA95A957cB85dBB1957267EF85",
+        "pairAddress": "0x933477eba23726cA95A957cB85dBB1957267EF85",
         "chain": "bsc"
     },
     "the-kingdom-coin": {
         "display_name": "TKC",
         "emoji": "🌟",
-        "contract": "0xBeE567474f87F7725791F2872D165FB69e0bBcDd",
+        "pairAddress": "0xBeE567474f87F7725791F2872D165FB69e0bBcDd",
         "chain": "bsc"
     },
     "defi-tiger": {
         "display_name": "DTG",
         "emoji": "🌟",
-        "contract": "0xD2e4a524d1a932adbC70fb41F2bEC05884d5f6C2",
+        "pairAddress": "0xD2e4a524d1a932adbC70fb41F2bEC05884d5f6C2",
         "chain": "bsc"
     },
     "ocicat":   {
         "display_name": "Ocicat",
         "emoji": "🌟",
-        "contract": "0x1df65d3a75AeCd000A9c17c97E99993aF01DbcD1",
+        "pairAddress": "0x1df65d3a75AeCd000A9c17c97E99993aF01DbcD1",
         "chain": "bsc"
     },
     "watter-rabbit":   {
         "display_name": "WAR",
         "emoji": "🌟",
-        "contract": "0xF1C2D7d7e539a02acC3f0C46Ca1e83c0F69BAaC2",
+        "pairAddress": "0xF1C2D7d7e539a02acC3f0C46Ca1e83c0F69BAaC2",
         "chain": "bsc"
     },
     "catcoin":   {
         "display_name": "CATS",
         "emoji": "🌟",
-        "contract": "0x56C2723807C398a5D263C698d660165802F104a8",
+        "pairAddress": "0x56C2723807C398a5D263C698d660165802F104a8",
         "chain": "bsc"
     },
     "bnbtiger":   {
         "display_name": "BNBTIGER",
         "emoji": "🌟",
-        "contract": "0x5e1AAb9d49F6C7122df7dE4d6dBd5b03C1EBB0B7",
+        "pairAddress": "0x5e1AAb9d49F6C7122df7dE4d6dBd5b03C1EBB0B7",
         "chain": "bsc"
     },
     "bitcoin":    {"display_name": "BTC",      "emoji": "💰", "coinlore_id": "90"},
@@ -197,7 +197,7 @@ async def get_price_with_change(token_id):
     if not token:
         return {"price": "N/A", "raw_price": 0, "chg_24": "—"}
 
-    if "contract" in token:  # DexScreener tokens
+    if "pairAddress" in token:  # DexScreener tokens
         data = await get_token_info_dexscreener(token_id)
         return {
             "price": data.get("price", "N/A"),
@@ -228,9 +228,9 @@ async def get_price_with_change(token_id):
 
 async def get_dexscreener_data(token_id):
     t = TOKENS.get(token_id)
-    if not t or not t.get("contract"):
+    if not t or not t.get("pairAddress"):
         return None
-    url = f"https://api.dexscreener.com/latest/dex/search?q={t['contract']}"
+    url = f"https://api.dexscreener.com/latest/dex/search?q={t['pairAddress']}"
     try:
         async with httpx.AsyncClient(timeout=10) as c:
             r = await c.get(url)
@@ -259,7 +259,7 @@ async def get_token_info_dexscreener(token_id):
             "supply": "—",
             "txns": {"buys": "-", "sells": "-"},
             "created_at": "-",
-            "contract": TOKENS[token_id].get("contract"),
+            "pairAddress": TOKENS[token_id].get("pairAddress"),
             "msg": "⚠️ No data"
         }
 
@@ -289,7 +289,7 @@ async def get_token_info_dexscreener(token_id):
         "supply": format_price(supply, compact=True),
         "txns": txns_formatted,
         "created_at": datetime.fromtimestamp(created_at_ts / 1000).strftime('%Y-%m-%d') if created_at_ts else "—",
-        "contract": d.get("pairAddress", TOKENS[token_id].get("contract")),
+        "contract": d.get("baseToken", {}).get("address", "N/A"),
         "msg": "✅ Ok 200"
     }
 
