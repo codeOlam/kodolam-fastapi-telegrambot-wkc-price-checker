@@ -1,5 +1,4 @@
 import asyncio
-import traceback
 import httpx
 import os
 import time
@@ -9,7 +8,7 @@ from contextlib import asynccontextmanager
 from background import start_price_checker
 from conversion import AMOUNT_PATTERN, handle_price_it_flow
 from tokenInfo import handle_token_info
-from marketOracle import start_emjay_oracle
+from marketOracle import EmjayState, start_emjay_oracle
 from utils import (
     get_dominance, get_fear_greed, register_chat_id, TOKENS,
     send_message_with_buttons, send_message, TELEGRAM_API_URL
@@ -18,11 +17,11 @@ from utils import (
 BOT = os.getenv("TELEGRAM_BOT_TOKEN")
 
 MAIN_MENU = [
-    [{"text": "🚀 Dre Price Calculator", "callback_data": "dre_price_it"}],
-    [{"text": "📈 Emjay Market Oracle", "callback_data": "emjay_market_oracle"}],
-    [{"text": "ℹ️ Token Info", "callback_data": "token_info_menu"}],
-    [{"text": "📊 Fear & Greed", "callback_data": "info_fear_greed"}],
-    [{"text": "📉 BTC/ETH Dominance", "callback_data": "info_dominance"}],
+    [{"text": "🧮 Dre Price Calculator", "callback_data": "dre_price_it"}],
+    [{"text": "🥷 Emjay Market Ninja", "callback_data": "emjay_market_oracle"}],
+    [{"text": "🧠 Token Info", "callback_data": "token_info_menu"}],
+    [{"text": "🙀🤑 Fear & Greed", "callback_data": "info_fear_greed"}],
+    [{"text": "🦾 BTC/ETH Dominance", "callback_data": "info_dominance"}],
 ]
 
 DRE_ACTIVE_USERS = {}  # {chat_id: timestamp}
@@ -72,19 +71,18 @@ async def webhook(req: Request):
         data_cb = cb["data"]
 
         if data_cb == "dre_price_it":
-            # Start Dre flow and timestamp it
             DRE_ACTIVE_USERS[cid] = time.time()
+            EmjayState.pop(cid, None)  # Clear Emjay flow
             return await send_message_with_buttons(
                 cid,
-                "🚀 Dre’s Price Tool activated! Send something like `10 wkc` or `$5`. I’ll run the numbers. (Session lasts 2 min)",
+                "🚀 Dre's Price Tool activated! Send something like `10 wkc` or `$5`. I’ll run the numbers. (Session lasts 2 min)",
                 [[{"text": "Cancel", "callback_data": "cancel"}]]
             )
 
         elif data_cb == "token_info_menu":
-            # 🧠 Build token info buttons in grid (2 per row)
             buttons = []
             row = []
-            for i, (k, v) in enumerate(TOKENS.items()):
+            for k, v in TOKENS.items():
                 row.append(
                     {"text": f"{v['emoji']} {v['display_name']}", "callback_data": f"info|{k}"})
                 if len(row) == 2:
@@ -92,19 +90,19 @@ async def webhook(req: Request):
                     row = []
             if row:
                 buttons.append(row)
-            return await send_message_with_buttons(cid, "🔍 Select a token to get details:", buttons)
+            return await send_message_with_buttons(cid, "🧠 Select a token to get details:", buttons)
 
         elif data_cb.startswith("info|"):
             _, key = data_cb.split("|", 1)
             return await handle_token_info(cid, key)
 
         elif data_cb == "emjay_market_oracle":
-            # 🔢 Emjay Oracle Grid (DexScreener only)
+            DRE_ACTIVE_USERS.pop(cid, None)  # Clear Dre flow
             buttons = []
             row = []
             for k, v in TOKENS.items():
                 if "contract" not in v:
-                    continue  # skip non-dex tokens
+                    continue
                 row.append(
                     {"text": f"{v['emoji']} {v['display_name']}", "callback_data": f"oracle|{k}"})
                 if len(row) == 2:
@@ -112,11 +110,11 @@ async def webhook(req: Request):
                     row = []
             if row:
                 buttons.append(row)
-            return await send_message_with_buttons(cid, "🎯 Emjay Oracle: pick a Dex token", buttons)
+            return await send_message_with_buttons(cid, "🥷 Emjay says: pick any token", buttons)
 
         elif data_cb.startswith("oracle|"):
-            _, key = data_cb.split("|", 1)
-            return await start_emjay_oracle(cid, key)
+            DRE_ACTIVE_USERS.pop(cid, None)  # Clear Dre flow
+            return await start_emjay_oracle(cid, data_cb)
 
         elif data_cb == "info_fear_greed":
             return await send_message(cid, f"🙀🤑 Fear & Greed Index\n{await get_fear_greed()}")
@@ -126,28 +124,193 @@ async def webhook(req: Request):
 
         elif data_cb == "cancel":
             DRE_ACTIVE_USERS.pop(cid, None)
+            EmjayState.pop(cid, None)
             return await send_message_with_buttons(cid, "❌ Operation canceled.", MAIN_MENU)
 
-    # Handle /start command
     if msg == "/start":
-        return await send_message_with_buttons(cid,
-                                               "👋 Welcome! Choose an option:", MAIN_MENU)
+        return await send_message_with_buttons(cid, "👋 Welcome! Choose an option:", MAIN_MENU)
 
-    # Handle text input for Dre only if flow was started
+    # Route to Emjay if active
+    if cid in EmjayState:
+        return await start_emjay_oracle(cid, msg)
+
+    # Handle Dre
     if AMOUNT_PATTERN.match(msg or ""):
         ts = DRE_ACTIVE_USERS.get(cid)
-        if ts and time.time() - ts < 120:  # 2 minutes session window
+        if ts and time.time() - ts < 120:
             return await handle_price_it_flow(cid, msg)
         else:
-            return await send_message(cid, "❌ Dre ain't listening unless you start with 🚀 Dre Price Calculator /start.")
+            return await send_message(cid, "❌ Dre ain't listening unless you start with 🧮 Dre Price Calculator.")
 
-    return await send_message_with_buttons(cid,
-                                           "👋 Hello! Press /start to begin.", MAIN_MENU)
+    return await send_message_with_buttons(cid, "👋 Hello! Press /start to begin.", MAIN_MENU)
 
 
 @app.api_route("/ping", methods=["GET", "HEAD"])
 async def ping():
     return {"status": "ok"}
+
+
+# This is the
+
+# import asyncio
+# import traceback
+# import httpx
+# import os
+# import time
+# from fastapi import FastAPI, Request
+# from contextlib import asynccontextmanager
+
+# from background import start_price_checker
+# from conversion import AMOUNT_PATTERN, handle_price_it_flow
+# from tokenInfo import handle_token_info
+# from marketOracle import EmjayState, start_emjay_oracle
+# from utils import (
+#     get_dominance, get_fear_greed, register_chat_id, TOKENS,
+#     send_message_with_buttons, send_message, TELEGRAM_API_URL
+# )
+
+# BOT = os.getenv("TELEGRAM_BOT_TOKEN")
+
+# MAIN_MENU = [
+#     [{"text": "🧮 Dre The Price Calculator", "callback_data": "dre_price_it"}],
+#     [{"text": "🥷 Emjay The Market Ninja", "callback_data": "emjay_market_oracle"}],
+#     [{"text": "🧠 Token Info", "callback_data": "token_info_menu"}],
+#     [{"text": "🙀🤑 Fear & Greed", "callback_data": "info_fear_greed"}],
+#     [{"text": "🦾 BTC/ETH Dominance", "callback_data": "info_dominance"}],
+# ]
+
+# DRE_ACTIVE_USERS = {}  # {chat_id: timestamp}
+
+
+# async def set_commands():
+#     cmds = [{"command": "start", "description": "Open menu"}]
+#     async with httpx.AsyncClient() as c:
+#         await c.post(f"{TELEGRAM_API_URL}/setMyCommands", json={"commands": cmds})
+
+
+# async def set_webhook():
+#     async with httpx.AsyncClient() as client:
+#         await client.post(f"{TELEGRAM_API_URL}/setWebhook",
+#                           data={"url": os.getenv("WEBHOOK_URL")})
+
+
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     asyncio.create_task(start_price_checker())
+#     await set_webhook()
+#     await set_commands()
+#     yield
+
+
+# app = FastAPI(lifespan=lifespan)
+
+
+# @app.post("/webhook")
+# async def webhook(req: Request):
+#     data = await req.json()
+#     cid = (
+#         data.get("message", {}).get("chat", {}).get("id") or
+#         data.get("callback_query", {}).get(
+#             "message", {}).get("chat", {}).get("id")
+#     )
+#     msg = data.get("message", {}).get("text", "")
+#     cb = data.get("callback_query")
+
+#     if not cid:
+#         return {"ok": True}
+
+#     register_chat_id(cid)
+
+#     # Handle callback queries (button taps)
+#     if cb:
+#         data_cb = cb["data"]
+
+#         if data_cb == "dre_price_it":
+#             # Start Dre flow and timestamp it
+#             DRE_ACTIVE_USERS[cid] = time.time()
+#             return await send_message_with_buttons(
+#                 cid,
+#                 "🚀 Dre's Price Tool activated! Send something like `10 wkc` or `$5`. I’ll run the numbers. (Session lasts 2 min)",
+#                 [[{"text": "Cancel", "callback_data": "cancel"}]]
+#             )
+
+#         if cid in EmjayState:
+#             return await start_emjay_oracle(cid, msg)
+
+#         elif data_cb == "token_info_menu":
+#             # 🧠 Build token info buttons in grid (2 per row)
+#             buttons = []
+#             row = []
+#             for i, (k, v) in enumerate(TOKENS.items()):
+#                 row.append(
+#                     {"text": f"{v['emoji']} {v['display_name']}", "callback_data": f"info|{k}"})
+#                 if len(row) == 2:
+#                     buttons.append(row)
+#                     row = []
+#             if row:
+#                 buttons.append(row)
+#             return await send_message_with_buttons(cid, "🔍 Select a token to get details:", buttons)
+
+#         elif data_cb.startswith("info|"):
+#             _, key = data_cb.split("|", 1)
+#             return await handle_token_info(cid, key)
+
+#         elif data_cb == "emjay_market_oracle":
+#             # 🔢 Emjay Oracle Grid (DexScreener only)
+#             buttons = []
+#             row = []
+#             for k, v in TOKENS.items():
+#                 if "contract" not in v:
+#                     continue  # skip non-dex tokens
+#                 row.append(
+#                     {"text": f"{v['emoji']} {v['display_name']}", "callback_data": f"oracle|{k}"})
+#                 if len(row) == 2:
+#                     buttons.append(row)
+#                     row = []
+#             if row:
+#                 buttons.append(row)
+#             return await send_message_with_buttons(cid, "🎯 Emjay says: pick any token", buttons)
+
+#         elif data_cb.startswith("oracle|"):
+#             DRE_ACTIVE_USERS.pop(cid, None)  # 🧹 Stop Dre flow
+
+#             _, key = data_cb.split("|", 1)
+#             return await start_emjay_oracle(cid, key)
+
+#         elif data_cb == "info_fear_greed":
+#             return await send_message(cid, f"🙀🤑 Fear & Greed Index\n{await get_fear_greed()}")
+
+#         elif data_cb == "info_dominance":
+#             return await send_message(cid, f"💪🦾 BTC/ETH Market Dominance\n{await get_dominance()}")
+
+#         elif data_cb == "cancel":
+#             DRE_ACTIVE_USERS.pop(cid, None)
+#             return await send_message_with_buttons(cid, "❌ Operation canceled.", MAIN_MENU)
+
+#     # Handle /start command
+#     if msg == "/start":
+#         return await send_message_with_buttons(cid,
+#                                                "👋 Welcome! Choose an option:", MAIN_MENU)
+
+#     # Handle text input for Dre only if flow was started
+#     if AMOUNT_PATTERN.match(msg or ""):
+#         # If Emjay is active, ignore Dre
+#         if cid in EmjayState:
+#             return await start_emjay_oracle(cid, msg)
+
+#         ts = DRE_ACTIVE_USERS.get(cid)
+#         if ts and time.time() - ts < 120:  # 2 minutes session window
+#             return await handle_price_it_flow(cid, msg)
+#         else:
+#             return await send_message(cid, "❌ Dre ain't listening unless you start with 🚀 Dre Price Calculator /start.")
+
+#     return await send_message_with_buttons(cid,
+#                                            "👋 Hello! Press /start to begin.", MAIN_MENU)
+
+
+# @app.api_route("/ping", methods=["GET", "HEAD"])
+# async def ping():
+#     return {"status": "ok"}
 
 
 # last working update
