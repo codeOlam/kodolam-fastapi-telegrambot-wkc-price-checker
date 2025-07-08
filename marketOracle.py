@@ -6,7 +6,7 @@ import asyncio
 EmjayState = {}
 
 
-async def start_emjay_flow(chat_id, step):
+async def start_emjay_oracle(chat_id, step):
     state = EmjayState.setdefault(chat_id, {"step": 0})
     if step == "emjay_start":
         state["step"] = 1

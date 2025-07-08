@@ -32,12 +32,6 @@ TOKENS = {
         "contract": "0xD2e4a524d1a932adbC70fb41F2bEC05884d5f6C2",
         "chain": "bsc"
     },
-    "bnbtiger":   {
-        "display_name": "BNBTIGER",
-        "emoji": "🌟",
-        "contract": "0x5e1AAb9d49F6C7122df7dE4d6dBd5b03C1EBB0B7",
-        "chain": "bsc"
-    },
     "ocicat":   {
         "display_name": "Ocicat",
         "emoji": "🌟",
@@ -54,6 +48,12 @@ TOKENS = {
         "display_name": "CATS",
         "emoji": "🌟",
         "contract": "0x56C2723807C398a5D263C698d660165802F104a8",
+        "chain": "bsc"
+    },
+    "bnbtiger":   {
+        "display_name": "BNBTIGER",
+        "emoji": "🌟",
+        "contract": "0x5e1AAb9d49F6C7122df7dE4d6dBd5b03C1EBB0B7",
         "chain": "bsc"
     },
     "bitcoin":    {"display_name": "BTC",      "emoji": "💰", "coinlore_id": "90"},
@@ -348,7 +348,7 @@ async def get_fear_greed():
             r = await c.get("https://api.alternative.me/fng/")
             r.raise_for_status()
         d = r.json().get("data", [{}])[0]
-        return f"\nMeter: {d.get('value', '?')} ({d.get('value_classification', '?')})"
+        return f"\nMeter: {d.get('value', '?')} ({d.get('value_classification', '?')})\n\nTG: @kodOlamWkcWatcher"
     except:
         traceback.print_exc()
         return "⚠️ Unavailable"
@@ -362,7 +362,7 @@ async def get_dominance():
         d = r.json()[0]
         btc, eth = float(d.get("btc_d", 0)), float(d.get("eth_d", 0))
         alt = round(100 - btc - eth, 2)
-        return f"\nBTC: \t{btc:.2f}%  \nETH: \t{eth:.2f}%  \nAlt: \t{alt:.2f}%"
+        return f"\nBTC: \t{btc:.2f}%  \nETH: \t{eth:.2f}%  \nAlt: \t{alt:.2f}%\n\nTG: @kodOlamWkcWatcher"
     except:
         traceback.print_exc()
         return "⚠️ Unavailable"
