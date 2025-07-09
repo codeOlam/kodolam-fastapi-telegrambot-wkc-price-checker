@@ -57,6 +57,7 @@ async def start_emjay_oracle(chat_id, step):
             try:
                 state["entry_mc"] = float(parse_market_cap(step))
             except:
+                traceback.print_exc()
                 return await send_message(chat_id, "❌ Invalid entry market cap format. Try `$50M`, `2B`, or `0.5T`.")
         state["step"] = 3
         return await send_message(chat_id, "🎯 What's your *exit market cap*? (e.g. `$500M`, `10B`, `1T`)")
@@ -76,8 +77,8 @@ async def start_emjay_oracle(chat_id, step):
                 return await send_message(chat_id, "❌ Total supply not available for this token.")
 
             # Use entry MC (provided or fallback to current)
-            entry_mc = parse_market_cap(
-                state["entry_mc"] or pd["market_cap"])
+            entry_mc = state["entry_mc"] or parse_market_cap(
+                pd["market_cap"])
             price_entry = entry_mc / total_supply
             price_exit = exit_mc / total_supply
 
