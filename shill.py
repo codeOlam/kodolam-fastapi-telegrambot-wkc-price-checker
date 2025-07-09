@@ -8,13 +8,37 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 SHILL_TONES = {
-    "funny": "Write a hilarious WKC shill tweet in Gen Z meme style. Include emojis, slang and crypto lingo. End with $WKC and #WikiCat.",
-    "bullish": "Write a very bullish and hype-filled shill tweet about WKC. Emphasize growth, market potential, and moon talk. End with $WKC and #WikiCat.",
-    "serious": "Write a serious and informative shill tweet about WKC's potential, tokenomics, and why it stands out. End with $WKC and #WikiCat.",
-    "degen": "Write a degenerate-style WKC shill tweet like a 2am ape post. Wild, chaotic, YOLO energy. End with $WKC and #WikiCat.",
-    "meme": "Create a meme-style WKC tweet that could go viral. Don't be boring. End with $WKC and #WikiCat.",
-    "analyst": "Write a professional shill tweet about WKC as if you're a market analyst. Focus on price action, volume, and trend momentum. Use trader lingo. End with $WKC and #WikiCat.",
-    "trader": "Write a shill tweet about WKC from a trader's perspective. Mention entry points, support/resistance, or a breakout setup. Keep it sharp and technical. End with $WKC and #WikiCat."
+    "funny": (
+        "Write a hilarious WKC shill tweet in Gen Z meme style. "
+        "Use crypto slang, emojis, and jokes. Be entertaining, absurd, but end on a bullish note. "
+        "Mention $WKC and include the hashtag #WikiCat. Keep it as a single X post."
+    ),
+    "bullish": (
+        "Write a bullish and hype-filled WKC shill tweet. Emphasize growth, future potential, and big gains. "
+        "Use strong positive language. Mention $WKC and include the hashtag #WikiCat. Keep it as a single X post."
+    ),
+    "serious": (
+        "Write a serious, informative shill tweet about WKC. Explain tokenomics, deflationary mechanics, auto-burns, "
+        "or market position. Appeal to logical investors. End with $WKC and #WikiCat. Keep it as a single X post."
+    ),
+    "degen": (
+        "Write a degenerate-style WKC shill tweet like it’s 2am and you just aped in. Pure chaos, moon vibes, max risk. "
+        "Use wild energy, slang, and humor. End with $WKC and #WikiCat. Keep it as a single X post."
+    ),
+    "meme": (
+        "Create a viral meme-style WKC tweet. Be clever, fast-paced, and punchy. Include something shocking, witty, "
+        "or ironic. End with $WKC and #WikiCat. Keep it as a single X post."
+    ),
+    "analyst": (
+        "Write a shill tweet for WKC from the perspective of a professional crypto analyst. "
+        "Highlight trends, deflationary supply, tokenomics, volume, and market growth. "
+        "Use technical but accessible language. End with $WKC and #WikiCat. Keep it as a single X post."
+    ),
+    "trader": (
+        "Write a shill tweet about WKC from a technical trader's perspective. Mention support levels, breakouts, "
+        "volume spikes, or entry zones. Use crisp, trader-style language. End with $WKC and #WikiCat. "
+        "Keep it as a single X post."
+    ),
 }
 
 
