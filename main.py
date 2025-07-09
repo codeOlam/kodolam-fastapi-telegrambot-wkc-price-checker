@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 
 from background import start_price_checker
 from conversion import AMOUNT_PATTERN, handle_price_it_flow
+from shill import generate_shill_post
 from tokenInfo import handle_token_info
 from marketOracle import EmjayState, show_emjay_ninja_buttons, start_emjay_oracle
 from utils import (
@@ -22,6 +23,7 @@ MAIN_MENU = [
     [{"text": "🧠 Token Info", "callback_data": "token_info_menu"}],
     [{"text": "🙀🤑 Fear & Greed", "callback_data": "info_fear_greed"}],
     [{"text": "🦾 BTC/ETH Dominance", "callback_data": "info_dominance"}],
+    [{"text": "🐱 Shill Me WKC", "callback_data": "shill_me_wkc"}],
 ]
 
 DRE_ACTIVE_USERS = {}  # {chat_id: timestamp}
@@ -140,6 +142,32 @@ async def webhook(req: Request):
                                                  "_For tokens with deflation, future supply may be lower than now._",
                                                  "\n🔗 TG: @kodOlamWkcWatcher"]),
                                       )
+
+        elif data_cb == "shill_me_wkc":
+            tone_buttons = [
+                [{"text": "🤣 Funny", "callback_data": "shill_tone|funny"},
+                 {"text": "🚀 Bullish", "callback_data": "shill_tone|bullish"}],
+                [{"text": "📊 Analyst", "callback_data": "shill_tone|analyst"},
+                 {"text": "📈 Trader", "callback_data": "shill_tone|trader"}],
+                [{"text": "🧠 Serious", "callback_data": "shill_tone|serious"},
+                 {"text": "🧨 Degen", "callback_data": "shill_tone|degen"}],
+                [{"text": "😂 Meme", "callback_data": "shill_tone|meme"}],
+                [{"text": "🏠 Back", "callback_data": "go_home"}]
+            ]
+            return await send_message_with_buttons(cid, "🎭 Choose your WKC shill tone:", tone_buttons)
+
+        elif data_cb.startswith("shill_tone|"):
+            tone = data_cb.split("|")[1]
+            await send_message(cid, "🤖 Generating your post...")
+            post = await generate_shill_post(tone)
+            return await send_message_with_buttons(
+                cid,
+                f"🎯 *Your {tone} auto-generated WKC Post:*\n\n`{post}`",
+                [
+                    [{"text": "♻️ Try Another", "callback_data": "shill_me_wkc"},
+                     {"text": "🏠 Home", "callback_data": "go_home"}]
+                ]
+            )
 
     if msg == "/start":
         return await send_message_with_buttons(cid, "👋 Welcome! Choose an option:", MAIN_MENU)
