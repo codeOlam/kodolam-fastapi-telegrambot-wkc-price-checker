@@ -39,7 +39,7 @@ def build_message(prices):
         line("wiki-cat"), "──────────────────",
         "*🎖 Commty Watchlist*\n", *
         (line(k)
-         for k in ["the-kingdom-coin", "defi-tiger", "ocicat", "watter-rabbit", "catcoin", "bnbtiger"]),
+         for k in ["the-kingdom-coin", "defi-tiger", "ocicat", "watter-rabbit", "catcoin", "yukan", "bnbtiger"]),
         "──────────────────", "*🏅 Major Coins*\n", *
         (line(k)
          for k in ["bitcoin", "ethereum", "ripple", "binancecoin", "solana"]),

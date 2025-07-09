@@ -50,6 +50,12 @@ TOKENS = {
         "pairAddress": "0x56C2723807C398a5D263C698d660165802F104a8",
         "chain": "bsc"
     },
+    "yukan":   {
+        "display_name": "YUKAN",
+        "emoji": "🌟",
+        "pairAddress": "0x0797395fcAd3F27059405f266080701A77688C7f",
+        "chain": "bsc"
+    },
     "bnbtiger":   {
         "display_name": "BNBTIGER",
         "emoji": "🌟",
