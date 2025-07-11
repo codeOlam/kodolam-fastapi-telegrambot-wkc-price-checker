@@ -9,7 +9,7 @@ from background import start_price_checker
 from conversion import AMOUNT_PATTERN, handle_price_it_flow
 from shill import generate_shill_post
 from tokenInfo import handle_token_info
-from marketOracle import EmjayState, show_emjay_ninja_buttons, start_emjay_oracle
+from marketOracle import EmjayState, find_mc_from_price_point, show_emjay_ninja_buttons, show_emjay_ninja_flow_prompt, start_emjay_oracle
 from utils import (
     get_dominance, get_fear_greed, register_chat_id, TOKENS,
     send_message_with_buttons, send_message, TELEGRAM_API_URL
@@ -100,11 +100,22 @@ async def webhook(req: Request):
 
         elif data_cb == "emjay_market_oracle":
             DRE_ACTIVE_USERS.pop(cid, None)  # Clear Dre flow
-            return await show_emjay_ninja_buttons(cid)
+            return await show_emjay_ninja_flow_prompt(cid)
 
-        elif data_cb.startswith("oracle|"):
-            DRE_ACTIVE_USERS.pop(cid, None)  # Clear Dre flow
+        elif data_cb.startswith("emjay_ninja|"):
+            option = data_cb.split('|')[1]
+            if option == 'cancel':
+                DRE_ACTIVE_USERS.pop(cid, None)
+                EmjayState.pop(cid, None)
+                return await send_message_with_buttons(cid, "❌ Operation canceled.", MAIN_MENU)
+            else:
+                return await show_emjay_ninja_buttons(cid, option)
+
+        elif data_cb.startswith("estimate_profit|"):
             return await start_emjay_oracle(cid, data_cb)
+
+        elif data_cb.startswith("price_point|"):
+            return await find_mc_from_price_point(cid, data_cb)
 
         elif data_cb == "info_fear_greed":
             return await send_message(cid, f"🙀🤑 Fear & Greed Index\n{await get_fear_greed()}")
@@ -117,13 +128,9 @@ async def webhook(req: Request):
             EmjayState.pop(cid, None)
             return await send_message_with_buttons(cid, "❌ Operation canceled.", MAIN_MENU)
 
-        elif data_cb == "emjay_cancel":
-            EmjayState.pop(cid, None)
-            return await send_message_with_buttons(cid, "❌ Operation canceled.", MAIN_MENU)
-
         elif data_cb == "emjay_reset":
             EmjayState.pop(cid, None)
-            return await show_emjay_ninja_buttons(cid)
+            return await show_emjay_ninja_flow_prompt(cid)
 
         elif data_cb == "go_home":
             EmjayState.pop(cid, None)
@@ -174,7 +181,10 @@ async def webhook(req: Request):
 
     # Route to Emjay if active
     if cid in EmjayState:
-        return await start_emjay_oracle(cid, msg)
+        if EmjayState.get(cid, {}).get('option') == 'price_point':
+            return await find_mc_from_price_point(cid, msg)
+        else:
+            return await start_emjay_oracle(cid, msg)
 
     # Handle Dre
     if AMOUNT_PATTERN.match(msg or ""):
