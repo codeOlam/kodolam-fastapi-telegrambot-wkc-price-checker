@@ -14,7 +14,7 @@ async def start_price_checker():
                 "url": "https://x.com/codeolam"}],
             [{"text": "WikiCat on X",
                 "url": "https://x.com/wikicatcoin"}],
-            [{"text": "🤖 More market insights",
+            [{"text": "🤖 Bot Playground",
                 "url": "https://t.me/kodOlam_bot"}],
         ]
         await send_to_channel(msg, buttons)

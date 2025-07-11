@@ -111,9 +111,9 @@ def format_change(chg):
         val = float(chg_str)
 
         if val > 0:
-            return f"+{val:.2f}% ↑"
+            return f"+{format_price(val, compact=True)}% ↑"
         elif val < 0:
-            return f"{val:.2f}% ↓"
+            return f"{format_price(val, compact=True)}% ↓"
         else:
             return f"0.00%"
     except:
@@ -284,6 +284,8 @@ async def get_token_info_dexscreener(token_id):
     # Calculate estimated circulating supply
     supply = market_cap / price if price > 0 else "N/A"
 
+    queried_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+
     return {
         "name": d.get("baseToken", {}).get("name", "N/A"),
         "price": format_price(d.get("priceUsd", "-")),
@@ -294,8 +296,8 @@ async def get_token_info_dexscreener(token_id):
         "chg_24": f"{float(d.get('priceChange', {}).get('h24', 0)):.2f}%",
         "supply": format_price(supply, compact=True),
         "txns": txns_formatted,
-        "created_at": datetime.fromtimestamp(created_at_ts / 1000).strftime('%Y-%m-%d') if created_at_ts else "—",
         "contract": d.get("baseToken", {}).get("address", "N/A"),
+        "queried_at": queried_at,
         "msg": "✅ Ok 200"
     }
 
@@ -331,6 +333,8 @@ async def fetch_all_coinlore_prices():
 async def get_token_info(token_id):
     await fetch_all_coinlore_prices()
     data = price_cache.get(token_id, {})
+    queried_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+
     return {
         "name": TOKENS[token_id]['display_name'],
         "price": format_price(data.get("price", "N/A")),
@@ -340,7 +344,7 @@ async def get_token_info(token_id):
         "chg_24": data.get("chg_24", "—"),
         "supply": format_price(data.get("supply", "N/A"), compact=True),
         "txns": " N/A",
-        "created_at": " N/A",
+        "queried_at": queried_at,
         "contract": " N/A",
         "msg": "✅ Ok 200"
     }
