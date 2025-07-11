@@ -64,6 +64,7 @@ async def start_emjay_oracle(chat_id, step):
         return await send_message(chat_id, "🎯 What's your *exit market cap*? (e.g. `$500M`, `10B`, `1T`)")
 
     if state["step"] == 3 and state["option"] == "estimate_profit":
+        await send_message(chat_id, "🥷 Emjay is estimating your profit...")
         try:
             exit_mc = float(parse_market_cap(step))
             state["exit_mc"] = exit_mc
@@ -100,8 +101,8 @@ async def start_emjay_oracle(chat_id, step):
                 f"🚀 Exit MC: *${format_price(exit_mc, compact=True)}*\n"
                 f"💵 Price @ Exit MC: *${format_price(price_exit)}*\n"
                 f"📈 Gain: *{format_price(gain_x, compact=True)}x | {format_change(gain_pct)}*\n"
-                f"🏁 Value @ Exit: *${value_at_exit:,.2f}*\n"
-                f"🏆 Profit: *${profit:,.2f}*\n"
+                f"🏁 Value @ Exit: *${format_price(value_at_exit, compact=True)}*\n"
+                f"🏆 Profit: *${format_price(profit, compact=True)}*\n"
                 f"⚠️ *No tax/burns considered.*\n\n"
                 f"\n🔗 TG: @kodOlamWkcWatcher"
             )
@@ -140,6 +141,7 @@ async def find_mc_from_price_point(chat_id, step):
         return await send_message(chat_id, f"💵 Enter a price point for *{sym}* (e.g. `0.000001`) to estimate Market Cap.\nAssuming you hold 1B tokens.")
 
     if state.get("step") == 1 and state["option"] == "price_point":
+        await send_message(chat_id, "🥷 Emjay is estimating the MC...")
         try:
             price = float(parse_price(step))
             key = state["token_key"]
@@ -167,7 +169,7 @@ async def find_mc_from_price_point(chat_id, step):
                 f"💵 Price point: *${format_price(price)}*\n"
                 f"🎯 Current Market Cap: *${format_price(current_mc, compact=True)}*\n\n"
                 f"📊 Estimated Market Cap: *${format_price(estimated_mc, compact=True)}*\n"
-                f"💰 Cost of 1B {sym}: *${format_price(one_billion_cost)}*\n"
+                f"💰 Cost of 1B {sym}: *${format_price(one_billion_cost, compact=True)}*\n"
                 f"📈 Gain: *{format_price(gain_x, compact=True)}x | {format_change(gain_pct)}*\n"
                 f"⚠️ *No tax/burns considered.*\n\n"
                 f"\n🔗 TG: @kodOlamWkcWatcher"
