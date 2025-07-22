@@ -16,7 +16,7 @@ async def handle_token_info(chat_id, key):
             f"📈 Vol 24h: ${d['vol_24']} | 🔢 Sup: {d['supply']}",
             f"🔁 Txns 24h: {d['txns']}",
             f"🧾 Contract: `{d['contract']}`",
-            f"📅 ts: {d['queried_at']}",
+            f"📅 {d['queried_at']}",
             f"\n🔗 TG: @kodOlamWkcWatcher"
         ]))
     else:
@@ -29,6 +29,6 @@ async def handle_token_info(chat_id, key):
             f"📊 MCap: ${d['market_cap']}",
             f"📈 Vol 24h: ${d['vol_24']}",
             f"🔢 Sup: {d['supply']}",
-            f"📅 ts: {d['queried_at']}",
+            f"📅 {d['queried_at']}",
             f"\n🔗 TG: @kodOlamWkcWatcher"
         ]))
