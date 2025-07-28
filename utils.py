@@ -44,6 +44,12 @@ TOKENS = {
         "pairAddress": "0xF1C2D7d7e539a02acC3f0C46Ca1e83c0F69BAaC2",
         "chain": "bsc"
     },
+    "phoenix":   {
+        "display_name": "PHT",
+        "emoji": "🌟",
+        "pairAddress": "0x8a2328B2C8E6a6f56668a0e26081Efc250A8D6c0",
+        "chain": "bsc"
+    },
     "catcoin":   {
         "display_name": "CATS",
         "emoji": "🌟",
