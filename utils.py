@@ -111,15 +111,15 @@ async def send_message_with_buttons(chat_id, text, inline_buttons):
         )
 
 
-def format_change(chg):
+def format_change(chg, normal: bool):
     try:
         chg_str = str(chg).replace('%', '').strip()
         val = float(chg_str)
 
         if val > 0:
-            return f"+{format_price(val, compact=True)}% ↑"
+            return f"+{val if normal else format_price(val, compact=True)}% ↑"
         elif val < 0:
-            return f"{format_price(val, compact=True)}% ↓"
+            return f"{val if normal else format_price(val, compact=True)}% ↓"
         else:
             return f"0.00%"
     except:
@@ -265,6 +265,7 @@ async def get_token_info_dexscreener(token_id):
             "price": "N/A",
             "raw_price": "N/A",
             "market_cap": "—",
+            "fdv": "-",
             "liquidity": "—",
             "vol_24": "—",
             "chg_24": "—",
@@ -278,9 +279,12 @@ async def get_token_info_dexscreener(token_id):
     # Parse values safely
     price_str = d.get("priceUsd", "N/A")
     market_cap_str = d.get("marketCap", "N/A")
+    fdv_str = d.get("fdv", "N/A")
     volume = d.get("volume", {}).get("h24", "N/A")
     price = float(price_str) if price_str not in [None, "N/A"] else 0
     market_cap = float(market_cap_str) if market_cap_str not in [
+        None, "N/A"] else 0
+    fdv_ = float(fdv_str) if fdv_str not in [
         None, "N/A"] else 0
     created_at_ts = d.get("pairCreatedAt")
     txns = d.get("txns", {}).get("h24", {})
@@ -297,6 +301,7 @@ async def get_token_info_dexscreener(token_id):
         "price": format_price(d.get("priceUsd", "-")),
         "raw_price": float(d.get("priceUsd", 0)),
         "market_cap": format_price(market_cap_str, compact=True),
+        "fdv": format_price(fdv_, compact=True),
         "liquidity": format_price(liquidity, compact=True),
         "vol_24": format_price(volume, compact=True),
         "chg_24": f"{float(d.get('priceChange', {}).get('h24', 0)):.2f}%",

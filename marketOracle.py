@@ -59,9 +59,9 @@ async def start_emjay_oracle(chat_id, step):
                 state["entry_mc"] = float(parse_market_cap(step))
             except:
                 traceback.print_exc()
-                return await send_message(chat_id, "❌ Invalid entry market cap format. Try `$50M`, `2B`, or `0.5T`.")
+                return await send_message(chat_id, "❌ Invalid entry market cap format. Try `$50M`, `$2B`, or `$0.5T`.")
         state["step"] = 3
-        return await send_message(chat_id, "🎯 What's your *exit market cap*? (e.g. `$500M`, `10B`, `1T`)")
+        return await send_message(chat_id, "🎯 What's your *exit market cap*? (e.g. `$500M`, `$10B`, `$1T`)")
 
     if state["step"] == 3 and state["option"] == "estimate_profit":
         await send_message(chat_id, "🥷 Emjay is estimating your profit...")
@@ -100,7 +100,7 @@ async def start_emjay_oracle(chat_id, step):
                 f"💸 Cost @ Entry: *${cost_at_entry:,.2f}*\n\n"
                 f"🚀 Exit MC: *${format_price(exit_mc, compact=True)}*\n"
                 f"💵 Price @ Exit MC: *${format_price(price_exit)}*\n"
-                f"📈 Gain: *{format_price(gain_x, compact=True)}x | {format_change(gain_pct)}*\n"
+                f"📈 Gain: *{format_price(gain_x, compact=True)}x | {format_change(gain_pct, False)}*\n"
                 f"🏁 Value @ Exit: *${format_price(value_at_exit, compact=True)}*\n"
                 f"🏆 Profit: *${format_price(profit, compact=True)}*\n"
                 f"⚠️ *No tax/burns considered.*\n\n"
@@ -170,7 +170,7 @@ async def find_mc_from_price_point(chat_id, step):
                 f"🎯 Current Market Cap: *${format_price(current_mc, compact=True)}*\n\n"
                 f"📊 Estimated Market Cap: *${format_price(estimated_mc, compact=True)}*\n"
                 f"💰 Cost of 1B {sym}: *${format_price(one_billion_cost, compact=True)}*\n"
-                f"📈 Gain: *{format_price(gain_x, compact=True)}x | {format_change(gain_pct)}*\n"
+                f"📈 Gain: *{format_price(gain_x, compact=True)}x | {format_change(gain_pct, False)}*\n"
                 f"⚠️ *No tax/burns considered.*\n\n"
                 f"\n🔗 TG: @kodOlamWkcWatcher"
             )
