@@ -50,16 +50,40 @@ TOKENS = {
         "pairAddress": "0x8a2328B2C8E6a6f56668a0e26081Efc250A8D6c0",
         "chain": "bsc"
     },
-    "catcoin":   {
-        "display_name": "CATS",
-        "emoji": "🌟",
-        "pairAddress": "0x56C2723807C398a5D263C698d660165802F104a8",
-        "chain": "bsc"
-    },
     "yukan":   {
         "display_name": "YUKAN",
         "emoji": "🌟",
         "pairAddress": "0x0797395fcAd3F27059405f266080701A77688C7f",
+        "chain": "bsc"
+    },
+    "zedek":   {
+        "display_name": "ZDK",
+        "emoji": "🌟",
+        "pairAddress": "0x246d1711a3834c405845ae52dE0B808EF9BFba6E",
+        "chain": "bsc"
+    },
+    "dutch-rabbit":   {
+        "display_name": "DURT",
+        "emoji": "🌟",
+        "pairAddress": "0xDC98307571709E048f8C6D1fF0Bb48eaB054E535",
+        "chain": "bsc"
+    },
+    "giant-token":   {
+        "display_name": "GTAN",
+        "emoji": "🌟",
+        "pairAddress": "0xE965E86BC7Da68fd489C4aB438eb81a48A4Ad6E5",
+        "chain": "bsc"
+    },
+    "the-word-token":   {
+        "display_name": "TWD",
+        "emoji": "🌟",
+        "pairAddress": "0x4F61C7672d36da605CeF5e52F6f2896193B61e83",
+        "chain": "bsc"
+    },
+    "btc-dragon":   {
+        "display_name": "BTCD",
+        "emoji": "🌟",
+        "pairAddress": "0x59670D4Ac4862b5B9c495ca31a2a4bC6fd1d0101",
         "chain": "bsc"
     },
     "bnbtiger":   {
@@ -163,7 +187,7 @@ def format_price(p, compact=False):
         f = float(p)
         if compact and f >= 1_000:
             return format_large_number(f, compact=True)
-        if f >= 0.01:
+        if f >= 1:
             return f"{f:,.2f}"
         elif f >= 0.00001:
             return f"{f:.10f}".rstrip("0").rstrip(".")
@@ -207,14 +231,15 @@ def parse_price(s):
 async def get_price_with_change(token_id):
     token = TOKENS.get(token_id)
     if not token:
-        return {"price": "N/A", "raw_price": 0, "chg_24": "—"}
+        return {"price": "N/A", "raw_price": 0, "chg_24": "—", "fdv": "-"}
 
     if "pairAddress" in token:  # DexScreener tokens
         data = await get_token_info_dexscreener(token_id)
         return {
             "price": data.get("price", "N/A"),
             "raw_price": data.get("raw_price", 0),
-            "chg_24": data.get("chg_24", "—")
+            "chg_24": data.get("chg_24", "—"),
+            "fdv": data.get("fdv", "-")
         }
 
     now = time.time()
@@ -223,7 +248,8 @@ async def get_price_with_change(token_id):
         return {
             "price": format_price(raw_price),
             "raw_price": raw_price,
-            "chg_24": price_cache[token_id].get("chg_24", "—")
+            "chg_24": price_cache[token_id].get("chg_24", "—"),
+            "fdv": price_cache[token_id].get("fdv", "—")
         }
 
     await fetch_all_coinlore_prices()
@@ -231,7 +257,8 @@ async def get_price_with_change(token_id):
     return {
         "price": format_price(raw_price),
         "raw_price": raw_price,
-        "chg_24": price_cache.get(token_id, {}).get("chg_24", "—")
+        "chg_24": price_cache.get(token_id, {}).get("chg_24", "—"),
+        "fdv": price_cache.get(token_id, {}).get("fdv", "—")
     }
 
 

@@ -27,11 +27,14 @@ def build_message(prices):
         data = prices.get(k, {})
         price = data.get("price", "N/A")
         chg = data.get("chg_24", "—")
+        fdv = data.get("fdv", "")
         ind = ""
         try:
             ind = "💹" if float(chg.replace('%', '').strip()) >= 0 else "🔻"
         except:
             pass
+        if t.get('pairAddress'):
+            return f"{t['emoji']} *{t['display_name']}*: `${format_price(price)}` {ind}{fdv} ({chg})"
         return f"{t['emoji']} *{t['display_name']}*: `${format_price(price)}` {ind} ({chg}) 24h"
 
     sections = [
@@ -39,7 +42,19 @@ def build_message(prices):
         line("wiki-cat"), "──────────────────",
         "*🎖 Commty Watchlist*\n", *
         (line(k)
-         for k in ["the-kingdom-coin", "defi-tiger", "ocicat", "watter-rabbit", "phoenix", "catcoin", "yukan", "bnbtiger"]),
+         for k in [
+             "the-kingdom-coin",
+             "defi-tiger",
+             "ocicat",
+             "watter-rabbit",
+             "phoenix",
+             "yukan",
+             "zedek",
+             "dutch-rabbit",
+             "giant-token",
+             "the-word-token",
+             "btc-dragon",
+             "bnbtiger"]),
         "──────────────────", "*🏅 Major Coins*\n", *
         (line(k)
          for k in ["bitcoin", "ethereum", "ripple", "binancecoin", "solana"]),
