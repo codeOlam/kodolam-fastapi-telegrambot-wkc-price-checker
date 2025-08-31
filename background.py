@@ -18,7 +18,7 @@ async def start_price_checker():
                 "url": "https://t.me/kodOlam_bot"}],
         ]
         await send_to_channel(msg, buttons)
-        await asyncio.sleep(60)
+        await asyncio.sleep(120)
 
 
 def build_message(prices):
