@@ -26,16 +26,22 @@ TOKENS = {
         "pairAddress": "0xBeE567474f87F7725791F2872D165FB69e0bBcDd",
         "chain": "bsc"
     },
-    "defi-tiger": {
-        "display_name": "DTG",
-        "emoji": "🌟",
-        "pairAddress": "0xD2e4a524d1a932adbC70fb41F2bEC05884d5f6C2",
-        "chain": "bsc"
-    },
     "ocicat":   {
         "display_name": "Ocicat",
         "emoji": "🌟",
         "pairAddress": "0x1df65d3a75AeCd000A9c17c97E99993aF01DbcD1",
+        "chain": "bsc"
+    },
+    "crepe":   {
+        "display_name": "CREPE",
+        "emoji": "🌟",
+        "pairAddress": "0x7D90deEDb9F15C1f8FdaCCc3b6BC52DC208E9C9a",
+        "chain": "bsc"
+    },
+    "defi-tiger": {
+        "display_name": "DTG",
+        "emoji": "🌟",
+        "pairAddress": "0xD2e4a524d1a932adbC70fb41F2bEC05884d5f6C2",
         "chain": "bsc"
     },
     "watter-rabbit":   {
@@ -62,18 +68,6 @@ TOKENS = {
         "pairAddress": "0x246d1711a3834c405845ae52dE0B808EF9BFba6E",
         "chain": "bsc"
     },
-    "dutch-rabbit":   {
-        "display_name": "DURT",
-        "emoji": "🌟",
-        "pairAddress": "0xDC98307571709E048f8C6D1fF0Bb48eaB054E535",
-        "chain": "bsc"
-    },
-    "giant-token":   {
-        "display_name": "GTAN",
-        "emoji": "🌟",
-        "pairAddress": "0xE965E86BC7Da68fd489C4aB438eb81a48A4Ad6E5",
-        "chain": "bsc"
-    },
     "the-word-token":   {
         "display_name": "TWD",
         "emoji": "🌟",
@@ -89,7 +83,7 @@ TOKENS = {
     "bnbtiger":   {
         "display_name": "BNBTIGER",
         "emoji": "🌟",
-        "pairAddress": "0x5e1AAb9d49F6C7122df7dE4d6dBd5b03C1EBB0B7",
+        "pairAddress": "0x95073d7B958f6a4CcC46faB5154997fE819695D9",
         "chain": "bsc"
     },
     "bitcoin":    {"display_name": "BTC",      "emoji": "💰", "coinlore_id": "90"},
@@ -239,7 +233,7 @@ async def get_price_with_change(token_id):
             "price": data.get("price", "N/A"),
             "raw_price": data.get("raw_price", 0),
             "chg_24": data.get("chg_24", "—"),
-            "fdv": data.get("fdv", "-")
+            "fdv": data.get("marketCap", "-")
         }
 
     now = time.time()
@@ -249,7 +243,7 @@ async def get_price_with_change(token_id):
             "price": format_price(raw_price),
             "raw_price": raw_price,
             "chg_24": price_cache[token_id].get("chg_24", "—"),
-            "fdv": price_cache[token_id].get("fdv", "—")
+            "fdv": price_cache[token_id].get("marketCap", "—")
         }
 
     await fetch_all_coinlore_prices()
@@ -258,7 +252,7 @@ async def get_price_with_change(token_id):
         "price": format_price(raw_price),
         "raw_price": raw_price,
         "chg_24": price_cache.get(token_id, {}).get("chg_24", "—"),
-        "fdv": price_cache.get(token_id, {}).get("fdv", "—")
+        "fdv": price_cache.get(token_id, {}).get("marketCap", "—")
     }
 
 

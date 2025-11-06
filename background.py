@@ -44,14 +44,13 @@ def build_message(prices):
         (line(k)
          for k in [
              "the-kingdom-coin",
-             "defi-tiger",
              "ocicat",
+             "crepe",
+             "defi-tiger",
              "watter-rabbit",
              "phoenix",
              "yukan",
              "zedek",
-             "dutch-rabbit",
-             "giant-token",
              "the-word-token",
              "btc-dragon",
              "bnbtiger"]),
