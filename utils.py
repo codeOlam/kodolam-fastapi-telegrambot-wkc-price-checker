@@ -68,12 +68,6 @@ TOKENS = {
         "pairAddress": "0x246d1711a3834c405845ae52dE0B808EF9BFba6E",
         "chain": "bsc"
     },
-    "the-word-token":   {
-        "display_name": "TWD",
-        "emoji": "🌟",
-        "pairAddress": "0x4F61C7672d36da605CeF5e52F6f2896193B61e83",
-        "chain": "bsc"
-    },
     "btc-dragon":   {
         "display_name": "BTCD",
         "emoji": "🌟",
@@ -278,63 +272,61 @@ async def get_dexscreener_data(token_id):
         return None
 
 
+def _to_float(v):
+    try:
+        return float(v) if v not in (None, "N/A") else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _fmt_or_na(v, compact=False):
+    return "N/A" if v is None else format_price(v, compact=compact)
+
+
 async def get_token_info_dexscreener(token_id):
     d = await get_dexscreener_data(token_id)
+    queried_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+
     if not d:
         return {
             "name": "N/A",
             "price": "N/A",
-            "raw_price": "N/A",
+            "raw_price": 0,
             "market_cap": "—",
             "fdv": "-",
             "liquidity": "—",
             "vol_24": "—",
             "chg_24": "—",
             "supply": "—",
-            "txns": {"buys": "-", "sells": "-"},
-            "created_at": "-",
-            "pairAddress": TOKENS[token_id].get("pairAddress"),
-            "msg": "⚠️ No data"
+            "txns": "Buys: - | Sells: -",
+            "contract": "N/A",
+            "queried_at": queried_at,
         }
 
-    def to_float(v, default=0):
-        try:
-            return float(v) if v not in [None, "N/A"] else default
-        except (TypeError, ValueError):
-            return default
-
-    # Parse values safely
-    price_str = d.get("priceUsd", "N/A")
-    market_cap_str = d.get("marketCap", "N/A")
-    fdv_str = d.get("fdv", "N/A")
-    volume = d.get("volume", {}).get("h24", "N/A")
-    price = to_float(price_str)
-    market_cap = to_float(market_cap_str)
-    fdv_ = to_float(fdv_str)
-    created_at_ts = d.get("pairCreatedAt")
+    # Parse each raw field exactly once; every value below is reused as-is,
+    # never re-parsed from `d`, so display and calculations can't drift apart.
+    price = _to_float(d.get("priceUsd"))
+    market_cap = _to_float(d.get("marketCap"))
+    fdv = _to_float(d.get("fdv"))
+    volume = _to_float(d.get("volume", {}).get("h24"))
+    liquidity = _to_float(d.get("liquidity", {}).get("usd"))
+    chg_24 = _to_float(d.get("priceChange", {}).get("h24")) or 0
+    supply = (market_cap / price) if market_cap is not None and price else None
     txns = d.get("txns", {}).get("h24", {})
-    txns_formatted = f"Buys: {txns.get('buys', 0)} | Sells: {txns.get('sells', 0)}"
-    liquidity = d.get("liquidity", {}).get("usd", "-")
-
-    # Calculate estimated circulating supply
-    supply = market_cap / price if price > 0 else "N/A"
-
-    queried_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
 
     return {
         "name": d.get("baseToken", {}).get("name", "N/A"),
-        "price": format_price(d.get("priceUsd", "-")),
-        "raw_price": price,
-        "market_cap": format_price(market_cap_str, compact=True),
-        "fdv": format_price(fdv_, compact=True),
-        "liquidity": format_price(liquidity, compact=True),
-        "vol_24": format_price(volume, compact=True),
-        "chg_24": f"{to_float(d.get('priceChange', {}).get('h24', 0)):.2f}%",
-        "supply": format_price(supply, compact=True),
-        "txns": txns_formatted,
+        "price": _fmt_or_na(price),
+        "raw_price": price or 0,
+        "market_cap": _fmt_or_na(market_cap, compact=True),
+        "fdv": _fmt_or_na(fdv, compact=True),
+        "liquidity": _fmt_or_na(liquidity, compact=True),
+        "vol_24": _fmt_or_na(volume, compact=True),
+        "chg_24": f"{chg_24:.2f}%",
+        "supply": _fmt_or_na(supply, compact=True),
+        "txns": f"Buys: {txns.get('buys', 0)} | Sells: {txns.get('sells', 0)}",
         "contract": d.get("baseToken", {}).get("address", "N/A"),
         "queried_at": queried_at,
-        "msg": "✅ Ok 200"
     }
 
 ############ Coinbase fallback for majors ############

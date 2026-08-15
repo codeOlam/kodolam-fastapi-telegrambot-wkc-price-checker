@@ -187,12 +187,15 @@ async def webhook(req: Request):
             return await start_emjay_oracle(cid, msg)
 
     # Handle Dre
+    ts = DRE_ACTIVE_USERS.get(cid)
+    dre_active = bool(ts) and time.time() - ts < 120
     if AMOUNT_PATTERN.match(msg or ""):
-        ts = DRE_ACTIVE_USERS.get(cid)
-        if ts and time.time() - ts < 120:
+        if dre_active:
             return await handle_price_it_flow(cid, msg)
         else:
             return await send_message(cid, "❌ Dre ain't listening unless you start with 🧮 Dre Price Calculator.")
+    elif dre_active:
+        return await send_message(cid, "🤔 Dre didn't catch that. Try something like `10 wkc` or `$5`.")
 
     return await send_message_with_buttons(cid, "👋 Hello! Press /start to begin.", MAIN_MENU)
 
