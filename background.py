@@ -55,7 +55,6 @@ def build_message(prices):
              "phoenix",
              "yukan",
              "zedek",
-             "the-word-token",
              "btc-dragon",
              "bnbtiger"]),
         "──────────────────", "*🏅 Major Coins*\n", *

@@ -115,6 +115,7 @@ async def start_emjay_oracle(chat_id, step):
                 [{"text": "🥷 How this was calculated?", "callback_data": "emjay_how"}],
             ]
 
+            EmjayState.pop(chat_id, None)
             return await send_message_with_buttons(chat_id, msg, buttons)
 
         except Exception:
@@ -217,5 +218,5 @@ async def show_emjay_ninja_buttons(cid, data_cb):
     if row:
         buttons.append(row)
     buttons.append(
-        [{"text": "🙅🏾 Cancel", "callback_data": "emjay_cancel"}])
+        [{"text": "🙅🏾 Cancel", "callback_data": "cancel"}])
     return await send_message_with_buttons(cid, "🥷 Emjay says: pick any token", buttons)
