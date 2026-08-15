@@ -297,16 +297,20 @@ async def get_token_info_dexscreener(token_id):
             "msg": "⚠️ No data"
         }
 
+    def to_float(v, default=0):
+        try:
+            return float(v) if v not in [None, "N/A"] else default
+        except (TypeError, ValueError):
+            return default
+
     # Parse values safely
     price_str = d.get("priceUsd", "N/A")
     market_cap_str = d.get("marketCap", "N/A")
     fdv_str = d.get("fdv", "N/A")
     volume = d.get("volume", {}).get("h24", "N/A")
-    price = float(price_str) if price_str not in [None, "N/A"] else 0
-    market_cap = float(market_cap_str) if market_cap_str not in [
-        None, "N/A"] else 0
-    fdv_ = float(fdv_str) if fdv_str not in [
-        None, "N/A"] else 0
+    price = to_float(price_str)
+    market_cap = to_float(market_cap_str)
+    fdv_ = to_float(fdv_str)
     created_at_ts = d.get("pairCreatedAt")
     txns = d.get("txns", {}).get("h24", {})
     txns_formatted = f"Buys: {txns.get('buys', 0)} | Sells: {txns.get('sells', 0)}"
@@ -320,12 +324,12 @@ async def get_token_info_dexscreener(token_id):
     return {
         "name": d.get("baseToken", {}).get("name", "N/A"),
         "price": format_price(d.get("priceUsd", "-")),
-        "raw_price": float(d.get("priceUsd", 0)),
+        "raw_price": price,
         "market_cap": format_price(market_cap_str, compact=True),
         "fdv": format_price(fdv_, compact=True),
         "liquidity": format_price(liquidity, compact=True),
         "vol_24": format_price(volume, compact=True),
-        "chg_24": f"{float(d.get('priceChange', {}).get('h24', 0)):.2f}%",
+        "chg_24": f"{to_float(d.get('priceChange', {}).get('h24', 0)):.2f}%",
         "supply": format_price(supply, compact=True),
         "txns": txns_formatted,
         "contract": d.get("baseToken", {}).get("address", "N/A"),
