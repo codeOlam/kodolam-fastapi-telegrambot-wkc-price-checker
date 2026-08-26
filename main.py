@@ -24,6 +24,8 @@ MAIN_MENU = [
     [{"text": "🙀🤑 Fear & Greed", "callback_data": "info_fear_greed"}],
     [{"text": "🦾 BTC/ETH Dominance", "callback_data": "info_dominance"}],
     [{"text": "🐱 Shill Me WKC", "callback_data": "shill_me_wkc"}],
+    [{"text": "Creator on X", "url": "https://x.com/codeolam"}],
+    [{"text": "WikiCat on X", "url": "https://x.com/wikicatcoin"}],
 ]
 
 DRE_ACTIVE_USERS = {}  # {chat_id: timestamp}
