@@ -270,6 +270,24 @@ async def get_dexscreener_data(token_id):
         return None
 
 
+async def get_holder_count(contract_address, chain_id="56"):
+    if not contract_address:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=10) as c:
+            r = await c.get(
+                f"https://api.gopluslabs.io/api/v1/token_security/{chain_id}",
+                params={"contract_addresses": contract_address}
+            )
+            r.raise_for_status()
+            data = r.json()
+        entry = data.get("result", {}).get(contract_address.lower())
+        return int(entry["holder_count"]) if entry and entry.get("holder_count") else None
+    except Exception:
+        traceback.print_exc()
+        return None
+
+
 def _to_float(v):
     try:
         return float(v) if v not in (None, "N/A") else None

@@ -1,7 +1,7 @@
 import asyncio
 import traceback
 import httpx
-from utils import TELEGRAM_API_URL, format_price, get_token_info_dexscreener, CHANNEL_ID
+from utils import TELEGRAM_API_URL, format_price, get_token_info_dexscreener, get_holder_count, CHANNEL_ID
 
 WKC_KEY = "wiki-cat"
 ALERT_THRESHOLD_PCT = 0.2
@@ -37,11 +37,16 @@ async def send_price_alert(data):
     except (TypeError, ValueError):
         chg24_val = 0
     direction = "🚀" if chg24_val >= 0 else "🔻"
+
+    holders = await get_holder_count(data.get('contract'))
+    holders_line = f"👥 Holders: `{holders:,}`\n" if holders else ""
+
     msg = (
         f"{direction} *WKC Price Alert*\n\n"
         f"👑 Price: `${data['price']}`\n"
         f"📉 24h Change: {data['chg_24']}\n"
         f"📊 Market Cap: `${data['market_cap']}`\n"
+        f"{holders_line}"
         f"📈 Vol 24h: `${data['vol_24']}`\n\n"
         f"🔗 TG: @kodOlamWkcWatcher"
     )
