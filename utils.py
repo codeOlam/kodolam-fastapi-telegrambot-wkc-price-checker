@@ -257,16 +257,14 @@ async def get_dexscreener_data(token_id):
     t = TOKENS.get(token_id)
     if not t or not t.get("pairAddress"):
         return None
-    url = f"https://api.dexscreener.com/latest/dex/search?q={t['pairAddress']}"
+    url = f"https://api.dexscreener.com/latest/dex/pairs/{t['chain']}/{t['pairAddress']}"
     try:
         async with httpx.AsyncClient(timeout=10) as c:
             r = await c.get(url)
             r.raise_for_status()
             data = r.json()
-        for pair in data.get("pairs", []):
-            if pair.get("quoteToken", {}).get("symbol", "").upper() == "USD":
-                return pair
-        return data.get("pairs", [None])[0]
+        pairs = data.get("pairs") or []
+        return pairs[0] if pairs else None
     except Exception:
         traceback.print_exc()
         return None
