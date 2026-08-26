@@ -4,7 +4,7 @@ import httpx
 from utils import TELEGRAM_API_URL, format_price, get_token_info_dexscreener, CHANNEL_ID
 
 WKC_KEY = "wiki-cat"
-ALERT_THRESHOLD_PCT = 0.5
+ALERT_THRESHOLD_PCT = 0.2
 POLL_INTERVAL_SEC = 30
 
 _last_alert_price = None
@@ -20,7 +20,8 @@ async def start_price_checker():
                 if _last_alert_price is None:
                     _last_alert_price = price
                 else:
-                    change_pct = (price - _last_alert_price) / _last_alert_price * 100
+                    change_pct = (price - _last_alert_price) / \
+                        _last_alert_price * 100
                     if abs(change_pct) >= ALERT_THRESHOLD_PCT:
                         await send_price_alert(data, change_pct)
                         _last_alert_price = price
