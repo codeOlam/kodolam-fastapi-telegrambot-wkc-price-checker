@@ -1,69 +1,47 @@
 import asyncio
-import os
 import traceback
 import httpx
-from utils import TELEGRAM_API_URL, format_price, get_price_with_change, TOKENS, CHANNEL_ID, fetch_all_coinlore_prices
+from utils import TELEGRAM_API_URL, format_price, get_price_with_change, CHANNEL_ID
+
+WKC_KEY = "wiki-cat"
+ALERT_THRESHOLD_PCT = 0.5
+
+_last_alert_price = None
 
 
 async def start_price_checker():
+    global _last_alert_price
     while True:
         try:
-            await fetch_all_coinlore_prices()
-            prices = {k: await get_price_with_change(k) for k in TOKENS}
-            msg = build_message(prices)
-            buttons = [
-                [{"text": "Creator on X",
-                    "url": "https://x.com/codeolam"}],
-                [{"text": "WikiCat on X",
-                    "url": "https://x.com/wikicatcoin"}],
-                [{"text": "🤖 Bot Playground",
-                    "url": "https://t.me/kodOlam_bot"}],
-            ]
-            await send_to_channel(msg, buttons)
+            data = await get_price_with_change(WKC_KEY)
+            price = data.get("raw_price", 0)
+            if price > 0:
+                if _last_alert_price is None:
+                    _last_alert_price = price
+                else:
+                    change_pct = (price - _last_alert_price) / _last_alert_price * 100
+                    if abs(change_pct) >= ALERT_THRESHOLD_PCT:
+                        await send_price_alert(price, change_pct)
+                        _last_alert_price = price
         except Exception:
             traceback.print_exc()
         await asyncio.sleep(120)
 
 
-def build_message(prices):
-    def line(k):
-        t = TOKENS[k]
-        data = prices.get(k, {})
-        price = data.get("price", "N/A")
-        chg = data.get("chg_24", "—")
-        fdv = data.get("fdv", "")
-        ind = ""
-        try:
-            ind = "💹" if float(chg.replace('%', '').strip()) >= 0 else "🔻"
-        except:
-            pass
-        if t.get('pairAddress'):
-            return f"{t['emoji']} *{t['display_name']}*: `${format_price(price)}` {ind}{fdv} ({chg})"
-        return f"{t['emoji']} *{t['display_name']}*: `${format_price(price)}` {ind} ({chg}) 24h"
-
-    sections = [
-        "*WKC Watcher 👀*\n🚀Live Token Prices🚀\n",
-        line("wiki-cat"), "──────────────────",
-        "*🎖 Commty Watchlist*\n", *
-        (line(k)
-         for k in [
-             "the-kingdom-coin",
-             "ocicat",
-             "crepe",
-             "defi-tiger",
-             "watter-rabbit",
-             "phoenix",
-             "yukan",
-             "zedek",
-             "btc-dragon",
-             "bnbtiger"]),
-        "──────────────────", "*🏅 Major Coins*\n", *
-        (line(k)
-         for k in ["bitcoin", "ethereum", "ripple", "binancecoin", "solana"]),
-        "",
-        "🧵 Follow along!"
+async def send_price_alert(price, change_pct):
+    direction = "🚀" if change_pct > 0 else "🔻"
+    sign = "+" if change_pct > 0 else ""
+    msg = (
+        f"{direction} *WKC Price Alert*\n\n"
+        f"👑 *WKC*: `${format_price(price)}` ({sign}{change_pct:.2f}%)\n\n"
+        f"🔗 TG: @kodOlamWkcWatcher"
+    )
+    buttons = [
+        [{"text": "Creator on X", "url": "https://x.com/codeolam"}],
+        [{"text": "WikiCat on X", "url": "https://x.com/wikicatcoin"}],
+        [{"text": "🤖 Bot Playground", "url": "https://t.me/kodOlam_bot"}],
     ]
-    return "\n".join(sections)
+    await send_to_channel(msg, buttons)
 
 
 async def send_to_channel(msg, buttons):
