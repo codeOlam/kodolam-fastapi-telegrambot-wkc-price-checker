@@ -5,7 +5,7 @@ import time
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 
-from background import start_price_checker
+from background import start_price_checker, start_hourly_pressure_report, start_digest_checker
 from conversion import AMOUNT_PATTERN, handle_price_it_flow
 from shill import generate_shill_post
 from tokenInfo import handle_token_info
@@ -46,6 +46,8 @@ async def set_webhook():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     asyncio.create_task(start_price_checker())
+    asyncio.create_task(start_hourly_pressure_report())
+    asyncio.create_task(start_digest_checker())
     await set_webhook()
     await set_commands()
     yield
