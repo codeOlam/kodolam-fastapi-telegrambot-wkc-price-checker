@@ -8,6 +8,7 @@ from pathlib import Path
 from datetime import datetime
 
 CHAT_IDS_FILE = Path("chat_ids.json")
+DIGEST_STATE_FILE = Path("digest_state.json")
 CHANNEL_ID = os.getenv('CHANNEL_ID')
 CHANNEL_HANDLE = "@WKCPriceAlert"
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{os.getenv('TELEGRAM_BOT_TOKEN')}"
@@ -109,6 +110,14 @@ def register_chat_id(chat_id):
     if chat_id not in ids:
         ids.append(chat_id)
         CHAT_IDS_FILE.write_text(json.dumps(ids))
+
+
+def load_digest_state():
+    return json.loads(DIGEST_STATE_FILE.read_text()) if DIGEST_STATE_FILE.exists() else {}
+
+
+def save_digest_state(state):
+    DIGEST_STATE_FILE.write_text(json.dumps(state))
 
 
 async def send_message_with_buttons(chat_id, text, inline_buttons):
@@ -310,6 +319,7 @@ async def get_token_info_dexscreener(token_id):
             "price": "N/A",
             "raw_price": 0,
             "market_cap": "—",
+            "raw_market_cap": 0,
             "fdv": "-",
             "liquidity": "—",
             "vol_24": "—",
