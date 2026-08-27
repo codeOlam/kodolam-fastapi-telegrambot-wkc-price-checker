@@ -11,7 +11,7 @@ from shill import generate_shill_post
 from tokenInfo import handle_token_info
 from marketOracle import EmjayState, find_mc_from_price_point, show_emjay_ninja_buttons, show_emjay_ninja_flow_prompt, start_emjay_oracle
 from utils import (
-    get_dominance, get_fear_greed, register_chat_id, TOKENS,
+    CHANNEL_HANDLE, get_dominance, get_fear_greed, register_chat_id, TOKENS,
     send_message_with_buttons, send_message, TELEGRAM_API_URL
 )
 
@@ -149,7 +149,7 @@ async def webhook(req: Request):
                                                  "5. *Profit* = Value @ Exit - Cost @ Entry\n\n",
                                                  "⚠️ This tool does *not* simulate tax/burns or liquidity effects.\n",
                                                  "_For tokens with deflation, future supply may be lower than now._",
-                                                 "\n🔗 TG: @kodOlamWkcWatcher"]),
+                                                 f"\n🔗 TG: {CHANNEL_HANDLE}"]),
                                       )
 
         elif data_cb == "shill_me_wkc":

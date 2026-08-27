@@ -9,6 +9,7 @@ from datetime import datetime
 
 CHAT_IDS_FILE = Path("chat_ids.json")
 CHANNEL_ID = os.getenv('CHANNEL_ID')
+CHANNEL_HANDLE = "@WKCPriceAlert"
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{os.getenv('TELEGRAM_BOT_TOKEN')}"
 
 SUBSCRIPT_MAP = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
@@ -402,7 +403,7 @@ async def get_fear_greed():
             r = await c.get("https://api.alternative.me/fng/")
             r.raise_for_status()
         d = r.json().get("data", [{}])[0]
-        return f"\nMeter: {d.get('value', '?')} ({d.get('value_classification', '?')})\n\n🔗 TG: @kodOlamWkcWatcher"
+        return f"\nMeter: {d.get('value', '?')} ({d.get('value_classification', '?')})\n\n🔗 TG: {CHANNEL_HANDLE}"
     except:
         traceback.print_exc()
         return "⚠️ Unavailable"
@@ -416,7 +417,7 @@ async def get_dominance():
         d = r.json()[0]
         btc, eth = float(d.get("btc_d", 0)), float(d.get("eth_d", 0))
         alt = round(100 - btc - eth, 2)
-        return f"\nBTC: \t{btc:.2f}%  \nETH: \t{eth:.2f}%  \nAlt: \t{alt:.2f}%\n\n🔗 TG: @kodOlamWkcWatcher"
+        return f"\nBTC: \t{btc:.2f}%  \nETH: \t{eth:.2f}%  \nAlt: \t{alt:.2f}%\n\n🔗 TG: {CHANNEL_HANDLE}"
     except:
         traceback.print_exc()
         return "⚠️ Unavailable"
