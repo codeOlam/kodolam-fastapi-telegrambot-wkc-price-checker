@@ -1,5 +1,6 @@
 import traceback
 from utils import (
+    CHANNEL_HANDLE,
     get_token_info_dexscreener,
     send_message,
     format_price,
@@ -104,7 +105,7 @@ async def start_emjay_oracle(chat_id, step):
                 f"🏁 Value @ Exit: *${format_price(value_at_exit, compact=True)}*\n"
                 f"🏆 Profit: *${format_price(profit, compact=True)}*\n"
                 f"⚠️ *No tax/burns considered.*\n\n"
-                f"\n🔗 TG: @kodOlamWkcWatcher"
+                f"\n🔗 TG: {CHANNEL_HANDLE}"
             )
 
             buttons = [
@@ -173,7 +174,7 @@ async def find_mc_from_price_point(chat_id, step):
                 f"💰 Cost of 1B {sym}: *${format_price(one_billion_cost, compact=True)}*\n"
                 f"📈 Gain: *{format_price(gain_x, compact=True)}x | {format_change(gain_pct, False)}*\n"
                 f"⚠️ *No tax/burns considered.*\n\n"
-                f"\n🔗 TG: @kodOlamWkcWatcher"
+                f"\n🔗 TG: {CHANNEL_HANDLE}"
             )
 
             buttons = [

@@ -6,7 +6,7 @@
 
 ## 🧩 Features
 
-- ✅ Periodic price updates to a Telegram channel (`@kodOlamWkcWatcher`)
+- ✅ WKC price-move alerts posted to a Telegram channel (`@WKCPriceAlert`)
 - ✅ Supports Telegram commands like `/info_wiki-cat`, `/info_fear_greed`, `/info_dominance`, etc.
 - ✅ Token data includes price, 24h % change, market cap, volume, circulating supply, and contract address.
 - ✅ Sends rich messages with emojis, formatting, token logos, and external links.
