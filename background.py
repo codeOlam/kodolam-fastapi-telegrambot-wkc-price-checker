@@ -41,12 +41,17 @@ async def send_price_alert(data):
     holders = await get_holder_count(data.get('contract'))
     holders_line = f"👥 Holders: `{holders:,}`\n" if holders else ""
 
+    buys_h1 = data.get('buys_h1', 0)
+    sells_h1 = data.get('sells_h1', 0)
+    pressure_line = f"🟢 {buys_h1} buys / 🔴 {sells_h1} sells (1h)\n" if (buys_h1 or sells_h1) else ""
+
     msg = (
         f"👑 Price: `${data['price']}` {direction}\n"
         f"📉 24h Change: {data['chg_24']}\n"
         f"📊 Market Cap: `${data['market_cap']}`\n"
         f"{holders_line}"
-        f"📈 Vol 24h: `${data['vol_24']}`\n\n"
+        f"📈 Vol 24h: `${data['vol_24']}`\n"
+        f"{pressure_line}\n"
         f"🔗 TG: {CHANNEL_HANDLE}"
     )
     buttons = [
@@ -57,8 +62,12 @@ async def send_price_alert(data):
 
 async def send_to_channel(msg, buttons):
     async with httpx.AsyncClient() as c:
-        await c.post(
+        r = await c.post(
             f"{TELEGRAM_API_URL}/sendMessage",
             json={"chat_id": CHANNEL_ID, "text": msg, "parse_mode": "Markdown",
                   "reply_markup": {"inline_keyboard": buttons}}
         )
+        r.raise_for_status()
+        body = r.json()
+        if not body.get("ok"):
+            raise RuntimeError(f"Telegram sendMessage failed: {body}")
