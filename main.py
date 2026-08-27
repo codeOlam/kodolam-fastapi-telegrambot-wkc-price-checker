@@ -33,9 +33,16 @@ DRE_ACTIVE_USERS = {}  # {chat_id: timestamp}
 
 
 async def set_commands():
-    cmds = [{"command": "start", "description": "Open menu"}]
+    default_cmds = [{"command": "start", "description": "Open menu"}]
     async with httpx.AsyncClient() as c:
-        await c.post(f"{TELEGRAM_API_URL}/setMyCommands", json={"commands": cmds})
+        await c.post(f"{TELEGRAM_API_URL}/setMyCommands", json={"commands": default_cmds})
+        if ADMIN_CHAT_ID:
+            admin_cmds = default_cmds + \
+                [{"command": "setwhale", "description": "Set whale alert threshold"}]
+            await c.post(f"{TELEGRAM_API_URL}/setMyCommands", json={
+                "commands": admin_cmds,
+                "scope": {"type": "chat", "chat_id": int(ADMIN_CHAT_ID)}
+            })
 
 
 async def set_webhook():
