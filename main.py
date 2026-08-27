@@ -5,13 +5,14 @@ import time
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 
-from background import start_price_checker, start_hourly_pressure_report, start_digest_checker
+from background import start_price_checker, start_hourly_pressure_report, start_digest_checker, start_whale_watcher
 from conversion import AMOUNT_PATTERN, handle_price_it_flow
 from shill import generate_shill_post
 from tokenInfo import handle_token_info
 from marketOracle import EmjayState, find_mc_from_price_point, show_emjay_ninja_buttons, show_emjay_ninja_flow_prompt, start_emjay_oracle
 from utils import (
-    CHANNEL_HANDLE, get_dominance, get_fear_greed, register_chat_id, TOKENS,
+    ADMIN_CHAT_ID, CHANNEL_HANDLE, get_dominance, get_fear_greed, get_whale_threshold,
+    register_chat_id, set_whale_threshold, TOKENS,
     send_message_with_buttons, send_message, TELEGRAM_API_URL
 )
 
@@ -48,6 +49,7 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(start_price_checker())
     asyncio.create_task(start_hourly_pressure_report())
     asyncio.create_task(start_digest_checker())
+    asyncio.create_task(start_whale_watcher())
     await set_webhook()
     await set_commands()
     yield
@@ -182,6 +184,22 @@ async def webhook(req: Request):
 
     if msg == "/start":
         return await send_message_with_buttons(cid, "👋 Welcome! Choose an option:", MAIN_MENU)
+
+    if msg and msg.startswith("/setwhale"):
+        if not ADMIN_CHAT_ID or str(cid) != str(ADMIN_CHAT_ID):
+            return await send_message(cid, "🚫 Not authorized.")
+        parts = msg.split()
+        if len(parts) == 1:
+            current = get_whale_threshold()
+            return await send_message(cid, f"🐋 Current whale threshold: ${current:,.0f}\nUsage: `/setwhale <amount>`")
+        try:
+            amount = float(parts[1])
+            if amount <= 0:
+                raise ValueError
+        except ValueError:
+            return await send_message(cid, "❌ Invalid amount. Usage: `/setwhale 10000`")
+        set_whale_threshold(amount)
+        return await send_message(cid, f"✅ Whale threshold set to ${amount:,.0f}")
 
     # Route to Emjay if active
     if cid in EmjayState:

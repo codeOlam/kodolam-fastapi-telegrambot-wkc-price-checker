@@ -4,7 +4,9 @@ import traceback
 import httpx
 from utils import (
     TELEGRAM_API_URL, format_price, get_token_info_dexscreener, get_holder_count,
-    get_token_security_stats, load_digest_state, save_digest_state, CHANNEL_ID, CHANNEL_HANDLE
+    get_token_security_stats, load_digest_state, save_digest_state,
+    get_latest_block, get_wkc_swaps, get_whale_threshold, load_whale_state, save_whale_state,
+    CHANNEL_ID, CHANNEL_HANDLE
 )
 
 WKC_KEY = "wiki-cat"
@@ -14,6 +16,7 @@ HOURLY_REPORT_INTERVAL_SEC = 60 * 60
 DIGEST_CHECK_INTERVAL_SEC = 15 * 60
 DAILY_PERIOD_SEC = 24 * 60 * 60
 WEEKLY_PERIOD_SEC = 7 * 24 * 60 * 60
+WHALE_CHECK_INTERVAL_SEC = 45
 
 _last_alert_price = None
 
@@ -162,6 +165,62 @@ async def send_digest(title, baseline, data, stats):
         f"📊 Market Cap: `${format_price(mc_now, compact=True)}` ({fmt_pct(mc_chg)})\n"
         f"👥 Holders: `{holders_now:,}` ({holders_chg_str})\n"
         f"🔥 Burned: `{format_price(burned_now, compact=True)} WKC` (+{format_price(burned_chg, compact=True)})\n\n"
+        f"🔗 TG: {CHANNEL_HANDLE}"
+    )
+    buttons = [
+        [{"text": "🤖 Bot Playground", "url": "https://t.me/kodOlam_bot"}],
+    ]
+    await send_to_channel(msg, buttons)
+
+
+async def start_whale_watcher():
+    state = load_whale_state()
+    if "last_block" not in state:
+        try:
+            state["last_block"] = await get_latest_block()
+            save_whale_state(state)
+        except Exception:
+            traceback.print_exc()
+
+    while True:
+        await asyncio.sleep(WHALE_CHECK_INTERVAL_SEC)
+        try:
+            state = load_whale_state()
+            last_block = state.get("last_block")
+            latest = await get_latest_block()
+
+            if last_block is None:
+                state["last_block"] = latest
+                save_whale_state(state)
+                continue
+            if latest <= last_block:
+                continue
+
+            swaps = await get_wkc_swaps(last_block + 1, latest)
+            if swaps:
+                data = await get_token_info_dexscreener(WKC_KEY)
+                wkc_price = data.get("raw_price", 0)
+                threshold = get_whale_threshold()
+                for s in swaps:
+                    usd_value = s["wkc_amount"] * wkc_price
+                    if usd_value >= threshold:
+                        await send_whale_alert(s, usd_value)
+
+            state["last_block"] = latest
+            save_whale_state(state)
+        except Exception:
+            traceback.print_exc()
+
+
+async def send_whale_alert(swap, usd_value):
+    emoji = "🟢🐋" if swap["side"] == "buy" else "🔴🐋"
+    verb = "Buy" if swap["side"] == "buy" else "Sell"
+    msg = (
+        f"{emoji} *WKC Whale {verb}*\n\n"
+        f"💰 `${usd_value:,.0f}`\n"
+        f"👑 `{swap['wkc_amount']:,.0f} WKC`\n"
+        f"💎 `{swap['bnb_amount']:.4f} BNB`\n"
+        f"🔗 [View Tx](https://bscscan.com/tx/{swap['tx_hash']})\n\n"
         f"🔗 TG: {CHANNEL_HANDLE}"
     )
     buttons = [

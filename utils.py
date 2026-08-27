@@ -9,9 +9,22 @@ from datetime import datetime
 
 CHAT_IDS_FILE = Path("chat_ids.json")
 DIGEST_STATE_FILE = Path("digest_state.json")
+WHALE_CONFIG_FILE = Path("whale_config.json")
+WHALE_STATE_FILE = Path("whale_state.json")
 CHANNEL_ID = os.getenv('CHANNEL_ID')
 CHANNEL_HANDLE = "@WKCPriceAlert"
+ADMIN_CHAT_ID = os.getenv('ADMIN_CHAT_ID')
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{os.getenv('TELEGRAM_BOT_TOKEN')}"
+
+# WKC/WBNB PancakeSwap V2 pair — token ordering verified via eth_call to
+# token0()/token1(), immutable for the life of this pair contract.
+WKC_PAIR_ADDRESS = "0x933477eba23726cA95A957cB85dBB1957267EF85"
+SWAP_TOPIC = "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"
+BSC_RPC_URLS = [
+    "https://bsc.publicnode.com",
+    "https://bsc-rpc.publicnode.com",
+]
+DEFAULT_WHALE_THRESHOLD_USD = 10000
 
 SUBSCRIPT_MAP = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
 
@@ -118,6 +131,27 @@ def load_digest_state():
 
 def save_digest_state(state):
     DIGEST_STATE_FILE.write_text(json.dumps(state))
+
+
+def get_whale_threshold():
+    try:
+        if WHALE_CONFIG_FILE.exists():
+            return float(json.loads(WHALE_CONFIG_FILE.read_text()).get("threshold_usd", DEFAULT_WHALE_THRESHOLD_USD))
+    except Exception:
+        traceback.print_exc()
+    return DEFAULT_WHALE_THRESHOLD_USD
+
+
+def set_whale_threshold(value):
+    WHALE_CONFIG_FILE.write_text(json.dumps({"threshold_usd": value}))
+
+
+def load_whale_state():
+    return json.loads(WHALE_STATE_FILE.read_text()) if WHALE_STATE_FILE.exists() else {}
+
+
+def save_whale_state(state):
+    WHALE_STATE_FILE.write_text(json.dumps(state))
 
 
 async def send_message_with_buttons(chat_id, text, inline_buttons):
@@ -278,6 +312,64 @@ async def get_dexscreener_data(token_id):
     except Exception:
         traceback.print_exc()
         return None
+
+
+############ On-chain swap reads (BSC public RPC, free, no key) ############
+
+
+async def _rpc_call(method, params, timeout=10):
+    body = {"jsonrpc": "2.0", "method": method, "params": params, "id": 1}
+    last_err = None
+    for url in BSC_RPC_URLS:
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as c:
+                r = await c.post(url, json=body)
+                r.raise_for_status()
+                data = r.json()
+            if "error" in data:
+                raise RuntimeError(data["error"])
+            return data["result"]
+        except Exception as e:
+            last_err = e
+            continue
+    raise last_err
+
+
+async def get_latest_block():
+    result = await _rpc_call("eth_blockNumber", [])
+    return int(result, 16)
+
+
+async def get_wkc_swaps(from_block, to_block="latest"):
+    from_hex = hex(from_block) if isinstance(from_block, int) else from_block
+    to_hex = hex(to_block) if isinstance(to_block, int) else to_block
+    logs = await _rpc_call("eth_getLogs", [{
+        "address": WKC_PAIR_ADDRESS,
+        "topics": [SWAP_TOPIC],
+        "fromBlock": from_hex,
+        "toBlock": to_hex,
+    }])
+    swaps = []
+    for log in logs:
+        data = log["data"][2:]
+        words = [data[i:i + 64] for i in range(0, len(data), 64)]
+        if len(words) != 4:
+            continue
+        amount0_in, amount1_in, amount0_out, amount1_out = (int(w, 16) for w in words)
+        wkc_in, wkc_out = amount0_in / 1e18, amount0_out / 1e18
+        bnb_in, bnb_out = amount1_in / 1e18, amount1_out / 1e18
+        if bnb_in > 0:
+            side, wkc_amount, bnb_amount = "buy", wkc_out, bnb_in
+        else:
+            side, wkc_amount, bnb_amount = "sell", wkc_in, bnb_out
+        swaps.append({
+            "side": side,
+            "wkc_amount": wkc_amount,
+            "bnb_amount": bnb_amount,
+            "tx_hash": log["transactionHash"],
+            "block": int(log["blockNumber"], 16),
+        })
+    return swaps
 
 
 BURN_ADDRESS = "0x000000000000000000000000000000000000dead"
