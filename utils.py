@@ -280,7 +280,10 @@ async def get_dexscreener_data(token_id):
         return None
 
 
-async def get_holder_count(contract_address, chain_id="56"):
+BURN_ADDRESS = "0x000000000000000000000000000000000000dead"
+
+
+async def get_token_security_stats(contract_address, chain_id="56"):
     if not contract_address:
         return None
     try:
@@ -292,10 +295,23 @@ async def get_holder_count(contract_address, chain_id="56"):
             r.raise_for_status()
             data = r.json()
         entry = data.get("result", {}).get(contract_address.lower())
-        return int(entry["holder_count"]) if entry and entry.get("holder_count") else None
+        if not entry:
+            return None
+        holder_count = int(entry["holder_count"]) if entry.get("holder_count") else None
+        burned_balance = 0.0
+        for h in entry.get("holders", []):
+            if h.get("address", "").lower() == BURN_ADDRESS:
+                burned_balance = float(h.get("balance", 0) or 0)
+                break
+        return {"holder_count": holder_count, "burned_balance": burned_balance}
     except Exception:
         traceback.print_exc()
         return None
+
+
+async def get_holder_count(contract_address, chain_id="56"):
+    stats = await get_token_security_stats(contract_address, chain_id)
+    return stats["holder_count"] if stats else None
 
 
 def _to_float(v):

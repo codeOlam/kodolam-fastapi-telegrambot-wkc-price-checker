@@ -4,7 +4,7 @@ import traceback
 import httpx
 from utils import (
     TELEGRAM_API_URL, format_price, get_token_info_dexscreener, get_holder_count,
-    load_digest_state, save_digest_state, CHANNEL_ID, CHANNEL_HANDLE
+    get_token_security_stats, load_digest_state, save_digest_state, CHANNEL_ID, CHANNEL_HANDLE
 )
 
 WKC_KEY = "wiki-cat"
@@ -116,26 +116,27 @@ async def check_and_send_digest(period_key, period_sec, title):
         return
 
     data = await get_token_info_dexscreener(WKC_KEY)
-    holders = await get_holder_count(data.get('contract')) or 0
-    await send_digest(title, baseline, data, holders)
-    await _reset_digest_baseline(state, period_key, now, data, holders)
+    stats = await get_token_security_stats(data.get('contract')) or {}
+    await send_digest(title, baseline, data, stats)
+    await _reset_digest_baseline(state, period_key, now, data, stats)
 
 
-async def _reset_digest_baseline(state, period_key, now, data=None, holders=None):
+async def _reset_digest_baseline(state, period_key, now, data=None, stats=None):
     if data is None:
         data = await get_token_info_dexscreener(WKC_KEY)
-    if holders is None:
-        holders = await get_holder_count(data.get('contract')) or 0
+    if stats is None:
+        stats = await get_token_security_stats(data.get('contract')) or {}
     state[period_key] = {
         "price": data.get("raw_price", 0),
         "market_cap": data.get("raw_market_cap", 0),
-        "holders": holders,
+        "holders": stats.get("holder_count") or 0,
+        "burned": stats.get("burned_balance") or 0,
         "ts": now,
     }
     save_digest_state(state)
 
 
-async def send_digest(title, baseline, data, holders_now):
+async def send_digest(title, baseline, data, stats):
     def pct_change(old, new):
         return None if not old else (new - old) / old * 100
 
@@ -146,16 +147,21 @@ async def send_digest(title, baseline, data, holders_now):
 
     price_now = data.get("raw_price", 0)
     mc_now = data.get("raw_market_cap", 0)
+    holders_now = stats.get("holder_count") or 0
+    burned_now = stats.get("burned_balance") or 0
+
     price_chg = pct_change(baseline["price"], price_now)
     mc_chg = pct_change(baseline["market_cap"], mc_now)
     holders_chg = holders_now - baseline.get("holders", 0)
     holders_chg_str = f"{'+' if holders_chg >= 0 else ''}{holders_chg:,}"
+    burned_chg = burned_now - baseline.get("burned", 0)
 
     msg = (
         f"{title}\n\n"
         f"👑 Price: `${format_price(price_now)}` ({fmt_pct(price_chg)})\n"
         f"📊 Market Cap: `${format_price(mc_now, compact=True)}` ({fmt_pct(mc_chg)})\n"
-        f"👥 Holders: `{holders_now:,}` ({holders_chg_str})\n\n"
+        f"👥 Holders: `{holders_now:,}` ({holders_chg_str})\n"
+        f"🔥 Burned: `{format_price(burned_now, compact=True)} WKC` (+{format_price(burned_chg, compact=True)})\n\n"
         f"🔗 TG: {CHANNEL_HANDLE}"
     )
     buttons = [
