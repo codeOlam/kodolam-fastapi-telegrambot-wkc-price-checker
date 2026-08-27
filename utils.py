@@ -316,6 +316,9 @@ async def get_token_info_dexscreener(token_id):
             "chg_24": "—",
             "supply": "—",
             "txns": "Buys: - | Sells: -",
+            "buys_h1": 0,
+            "sells_h1": 0,
+            "vol_h1": 0,
             "contract": "N/A",
             "queried_at": queried_at,
         }
@@ -326,22 +329,28 @@ async def get_token_info_dexscreener(token_id):
     market_cap = _to_float(d.get("marketCap"))
     fdv = _to_float(d.get("fdv"))
     volume = _to_float(d.get("volume", {}).get("h24"))
+    vol_h1 = _to_float(d.get("volume", {}).get("h1")) or 0
     liquidity = _to_float(d.get("liquidity", {}).get("usd"))
     chg_24 = _to_float(d.get("priceChange", {}).get("h24")) or 0
     supply = (market_cap / price) if market_cap is not None and price else None
     txns = d.get("txns", {}).get("h24", {})
+    txns_h1 = d.get("txns", {}).get("h1", {})
 
     return {
         "name": d.get("baseToken", {}).get("name", "N/A"),
         "price": _fmt_or_na(price),
         "raw_price": price or 0,
         "market_cap": _fmt_or_na(market_cap, compact=True),
+        "raw_market_cap": market_cap or 0,
         "fdv": _fmt_or_na(fdv, compact=True),
         "liquidity": _fmt_or_na(liquidity, compact=True),
         "vol_24": _fmt_or_na(volume, compact=True),
         "chg_24": f"{chg_24:.2f}%",
         "supply": _fmt_or_na(supply, compact=True),
         "txns": f"Buys: {txns.get('buys', 0)} | Sells: {txns.get('sells', 0)}",
+        "buys_h1": txns_h1.get("buys", 0) or 0,
+        "sells_h1": txns_h1.get("sells", 0) or 0,
+        "vol_h1": vol_h1,
         "contract": d.get("baseToken", {}).get("address", "N/A"),
         "queried_at": queried_at,
     }
