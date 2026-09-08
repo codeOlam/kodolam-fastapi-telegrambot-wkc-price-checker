@@ -1,8 +1,18 @@
 .venv/
 __pycache__/
 
+# macOS
+.DS_Store
+._*
 
+# Local runtime state (persisted to disk at runtime)
 chat_ids.json
 digest_state.json
 whale_config.json
 whale_state.json
+
+# Local dev notes
+SESSION_LOG.md
+
+# Environment
+.env

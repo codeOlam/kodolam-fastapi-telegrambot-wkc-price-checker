@@ -1,189 +1,168 @@
-# 📊 KodOlam WKC WatchBot (FastAPI + Telegram Bot)
+# 📊 WKC WatchBot (FastAPI + Telegram)
 
-**KodOlam WKC WatchBot** is a lightweight Telegram bot that posts real-time crypto price updates to a Telegram channel and responds to user commands for token data, Bitcoin dominance, and Fear & Greed Index. It uses CoinLore (for price data) and CoinGecko (for extra metadata like market cap and logos). Built with **FastAPI**, **Python**, and **Telegram Bot API**.
+**WKC WatchBot** is a lightweight Telegram bot that posts real-time crypto signals for
+[WikiCat (WKC)](https://dexscreener.com/bsc/0x933477eba23726ca95a957cb85dbb1957267ef85)
+to a Telegram channel and answers on-demand commands for token data, BTC/ETH dominance,
+and the Fear & Greed Index. Built with **FastAPI**, **Python 3.12+**, and the
+**Telegram Bot API**.
+
+It is designed to run entirely on **free tiers** — no paid data providers, no API keys
+required for the core features (an optional Groq key powers the AI "shill post"
+generator only).
 
 ---
 
 ## 🧩 Features
 
-- ✅ WKC price-move alerts posted to a Telegram channel (`@WKCPriceAlert`)
-- ✅ Supports Telegram commands like `/info_wiki-cat`, `/info_fear_greed`, `/info_dominance`, etc.
-- ✅ Token data includes price, 24h % change, market cap, volume, circulating supply, and contract address.
-- ✅ Sends rich messages with emojis, formatting, token logos, and external links.
-- ✅ Easy deployment via **Render.com** (Infrastructure-as-Code)
-- ✅ UptimeRobot keeps bot alive (Render free plan shuts down on inactivity)
+- **Price-move alerts** — posts to the channel only when WKC actually moves ±0.2%
+  since the last alert (not on a fixed schedule), with market cap, holder count, and
+  24h change baked in.
+- **⏱ Hourly Pulse** — buy/sell counts and buy-pressure % for the last hour.
+- **📅 Daily / 🗓 Weekly recaps** — price, market cap, and holder deltas versus the
+  start of the period.
+- **🔥 Burn tracking** — reads the dead-address balance from the holder list.
+- **🐋 Whale alerts** — decodes PancakeSwap `Swap` events straight off BSC public RPC
+  nodes and posts any single trade above a configurable USD threshold, with a BscScan
+  link. `/setwhale <amount>` tunes the threshold live (admin only).
+- **On-demand commands / buttons** — token info (price, 24h change, market cap, volume,
+  supply, contract), Fear & Greed Index, BTC/ETH dominance.
+- **🧮 Dre Price Calculator** — quick `10 wkc` / `$5` conversions.
+- **🥷 Emjay Market Ninja** — estimate market cap from a price point, or profit from an
+  entry/exit.
+- **🐱 Shill generator** — optional AI-generated WKC posts in several tones (needs a
+  Groq API key).
+
+### Data sources (all free, keyless)
+
+| Purpose | Source |
+| --- | --- |
+| Token price / pair data | [DexScreener](https://docs.dexscreener.com/) |
+| Ticker prices, global dominance | [CoinLore](https://www.coinlore.com/cryptocurrency-data-api) |
+| Holder count, token security, burn balance | [GoPlus](https://docs.gopluslabs.io/) |
+| On-chain swap events | BSC public RPC (`publicnode.com`) |
+| Fear & Greed Index | [alternative.me](https://alternative.me/crypto/fear-and-greed-index/) |
+| AI shill posts (optional) | [Groq](https://console.groq.com/) |
 
 ---
 
-## 🚀 Quick Start (Local Setup)
-
-### 1. Clone the repository
+## 🚀 Quick start (local)
 
 ```bash
-git clone git@github.com:codeOlam/kodolam-fastapi-telegrambot-wkc-price-checker.git
-cd kodolam-fastapi-telegrambot-wkc-price-checker
-```
+git clone <your-fork-url>
+cd telegrambot
 
-### 2. Create and activate a virtual environment (optional but recommended)
-
-```bash
-python -m venv venv
-source venv/bin/activate  # on Mac/Linux
-venv\Scripts\activate     # on Windows
-```
-
-### 3. Install dependencies
-
-```bash
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
----
+### Configure
 
-## ⚙️ Environment Variables
+Create a bot with [@BotFather](https://t.me/BotFather), then set these environment
+variables (e.g. in a `.env` file — it is git-ignored):
 
-The following environment variables are required:
+| Variable | Required | Description |
+| --- | --- | --- |
+| `TELEGRAM_BOT_TOKEN` | ✅ | Bot token from BotFather |
+| `CHANNEL_ID` | ✅ | Target channel's **numeric** ID (e.g. `-100XXXXXXXXXX`). Prefer the numeric ID over `@handle` — a channel rename breaks a handle. |
+| `WEBHOOK_URL` | ✅ (prod) | Public HTTPS URL Telegram should call, e.g. `https://your-app.onrender.com/webhook` |
+| `ADMIN_CHAT_ID` | optional | Telegram chat ID allowed to run `/setwhale`. If unset, `/setwhale` is disabled. |
+| `GROQ_API_KEY` | optional | Enables the AI shill-post generator |
 
-- `TELEGRAM_BOT_TOKEN`: Your Telegram bot token from BotFather
-- `CHANNEL_ID`: The ID of your target Telegram channel (e.g. `-100XXXXXXXXXX`)
-
-### Option 1: Using `.env` file
-
-Create a `.env` file in the root directory:
-
+```bash
+# bash / zsh
+export TELEGRAM_BOT_TOKEN=...
+export CHANNEL_ID=-100xxxxxxxxxx
+export WEBHOOK_URL=https://your-app.example.com/webhook
 ```
-TELEGRAM_BOT_TOKEN=your_bot_token
-CHANNEL_ID=-100xxxxxxxxxxxxx
-```
-
-Install `python-dotenv` and load it in your scripts if needed.
-
-### Option 2: Export to shell (e.g., Fish shell)
 
 ```fish
-set -x TELEGRAM_BOT_TOKEN your_bot_token
-set -x CHANNEL_ID -100xxxxxxxxxxxxx
+set -x TELEGRAM_BOT_TOKEN ...
+set -x CHANNEL_ID -100xxxxxxxxxx
 ```
 
-Or for Bash/zsh:
+### Run
 
 ```bash
-export TELEGRAM_BOT_TOKEN=your_bot_token
-export CHANNEL_ID=-100xxxxxxxxxxxxx
+uvicorn main:app --reload      # http://127.0.0.1:8000
 ```
 
----
-
-## 🧪 Running Locally
-
-### Start the FastAPI server:
+For local webhook testing, expose the port with a tunnel (ngrok, cloudflared) and
+register it:
 
 ```bash
-uvicorn main:app --reload
+./set-webhook.sh https://your-tunnel-url        # or ./ngrok-webhook.sh <url>
 ```
 
-It runs on: `http://127.0.0.1:8000`
-
-To test commands, you can set a webhook using a tunneling service like `ngrok`:
-
-```bash
-./ngrok-webhook.sh  # exposes your localhost to the internet
-```
-
-Or manually:
-
-```bash
-./set-webhook.sh
-```
+Both scripts read `TELEGRAM_BOT_TOKEN` from the environment.
 
 ---
 
-## ☁️ Deploying to Render (Blueprint / IaaC)
+## ☁️ Deploy to Render
 
-### 1. Fork this repo to your GitHub account.
+[`render.yaml`](render.yaml) is a Render Blueprint. Fork the repo, create a **New
+Blueprint** in Render pointed at your fork, and set the environment variables from the
+table above in the Render dashboard (they are marked `sync: false` so they are never
+committed).
 
-### 2. Create a file called `render.yaml` (already included in this repo):
+On startup the app registers its webhook with Telegram (`WEBHOOK_URL`), sets the
+command menu, and launches the background tasks (price checker, hourly pulse, digests,
+whale watcher) via FastAPI lifespan events.
 
-```yaml
-services:
-  - type: web
-    name: kodolam-bot-api
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
-    envVars:
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false # Set manually in Render dashboard
-      - key: CHANNEL_ID
-        sync: false
-```
+### Keeping it awake
 
-### 3. Deploy with one click:
-
-Go to: https://render.com/docs/infrastructure-as-code
-
-Choose **"New Blueprint"**, connect your repo, and deploy.
-
-> 💡 Make sure to add the required environment variables from the Render dashboard UI after deployment.
+Render's free web service sleeps on inactivity. Point an uptime pinger (e.g.
+[UptimeRobot](https://uptimerobot.com)) at `https://your-app.onrender.com/ping` every
+5–10 minutes.
 
 ---
 
-## 🔁 Keeping the Bot Alive with UptimeRobot
+## 🗂 Project layout
 
-Since the price-checker task must run continuously, GitHub Actions is not suitable. Instead, use [UptimeRobot](https://uptimerobot.com) to ping your service and keep it awake on Render’s free plan.
-
-### ✅ How it works:
-
-Your FastAPI server runs the start_price_checker() task on startup via lifespan events.
-
-1. Go to [UptimeRobot](https://uptimerobot.com)
-2. Click on **Add New Monitor**
-3. Select **“Price Checker Bot”**
-4. Click
-
-- **Monitor Type:** HTTP(s)
-- **Friendly Name:** KodOlam Bot Ping
-- **URL:** `https://xxx-xxx-xxx.onrender.com/ping`
-- **Monitoring Interval:** Every 5 or 10 minutes
-
-5. Save
-
-### ✅ Add a health check endpoint in `main.py`:
-
-```python
-@app.get("/ping")
-async def ping():
-    return {"status": "ok"}
 ```
+main.py           FastAPI app, Telegram webhook, command/callback routing
+background.py     Periodic tasks: price alerts, hourly pulse, digests, whale watcher
+utils.py          Shared helpers: data fetchers, on-chain decoding, formatters, state
+conversion.py     "Dre" price calculator flow
+marketOracle.py   "Emjay" market-cap / profit estimator flow
+tokenInfo.py      Token info card rendering
+shill.py          Optional Groq-backed post generator
+render.yaml       Render Blueprint
+set-webhook.sh    Register the Telegram webhook (reads env)
+ngrok-webhook.sh  Same, for an ngrok/tunnel URL
+```
+
+Runtime state (`chat_ids.json`, `digest_state.json`, `whale_config.json`,
+`whale_state.json`) is written to the working directory and is git-ignored. On Render's
+free tier the filesystem is ephemeral, so these reset on redeploy.
 
 ---
 
-## 🗂 File Structure
+## 🔐 Security notes
 
-```
-.
-├── main.py               # FastAPI app and Telegram webhook
-├── background.py         # Periodic price update task
-├── utils.py              # Shared helpers (price fetchers, message formatters)
-├── render.yaml           # Render.com IaaC config
-├── requirements.txt      # Python dependencies
-├── ngrok-webhook.sh      # Helper for dev webhook testing
-├── set-webhook.sh        # Manual webhook setter
-└── README.md             # This doc
-```
-
----
-
-## 🔐 Security Notes
-
-- **Never commit your `.env` file** or hard-code secrets in code.
-- Use GitHub Secrets and Render dashboard for secure env var management.
+- Never commit `.env` or hard-code tokens — all secrets come from environment
+  variables, and `.env` / macOS metadata files are git-ignored.
+- If you fork from an existing deployment, **rotate the bot token** (BotFather →
+  `/revoke`) and any Groq key so the previous operator can't post as your bot.
+- The `/webhook` endpoint does not currently verify Telegram's
+  [secret token](https://core.telegram.org/bots/api#setwebhook). Anyone who learns the
+  URL can POST a crafted update. `/setwhale` is additionally guarded by an
+  `ADMIN_CHAT_ID` match, but for production you should set a `secret_token` on
+  `setWebhook` and check the `X-Telegram-Bot-Api-Secret-Token` header. See
+  [Todo](#-todo).
 
 ---
 
-## 📌 Todo / Future Plans
+## 📌 Todo
 
-- [ ] Add caching to avoid redundant API calls
-- [ ] Display token logos using Telegram inline images
-- [ ] Add a database to track token history
-- [ ] Improve error reporting/logging to a channel
+- [ ] Verify Telegram's webhook secret token on `/webhook`
+- [ ] Add response caching to cut redundant API calls
+- [ ] Persist runtime state to a real datastore (survives redeploys)
+- [ ] Route error/logging output to a private channel
+
+---
+
+## 📄 License
+
+No license file is included yet. Add one (e.g. `LICENSE` with MIT) before publishing if
+you want others to be able to reuse the code.
